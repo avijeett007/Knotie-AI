@@ -1,0 +1,14 @@
+Flask
+Flask-Session
+twilio
+redis
+python-dotenv
+groq
+langchain
+openai
+requests
+werkzeug
+anthropic>=0.25.7
+elevenlabs
+pydantic
+flask-cors

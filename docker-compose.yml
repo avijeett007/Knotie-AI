@@ -1,0 +1,26 @@
+# This code is licensed under the Custom License for Paid Community Members.
+# For more information, see the LICENSE file in the root directory of this repository.
+
+version: '3.8'
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/usr/src/app
+      - ./audio_files:/usr/src/app/audio_files
+    environment:
+      FLASK_APP: app.py
+      FLASK_ENV: development
+      FLASK_RUN_HOST: 0.0.0.0
+    env_file:
+      - .env
+    depends_on:
+      - redis
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+volumes:
+  redis_data:
