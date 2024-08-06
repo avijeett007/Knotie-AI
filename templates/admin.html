@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Kno2gether</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container { max-width: 800px; margin-top: 50px; }
+        .config-section, .chats-section { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Knotie-AI Admin</h1>
+        <p class="lead">Manage your settings and view interactions</p>
+        <button class="btn btn-secondary" onclick="showSection('config')">Settings</button>
+        <button class="btn btn-secondary" onclick="showSection('chats')">Chats</button>
+        <button class="btn btn-danger float-right" onclick="logout()">Logout</button>
+
+        <div class="config-section mt-4">
+            <h3>Configuration</h3>
+            <div id="config-form"></div>
+            <button class="btn btn-primary" onclick="updateConfig()">Update Config</button>
+            <div id="config-message" class="mt-3"></div>
+        </div>
+
+        <div class="chats-section mt-4">
+            <h3>Chats</h3>
+            <div id="chats-list"></div>
+            <div id="chat-details" class="mt-4"></div>
+        </div>
+    </div>
+
+    <script>
+        function showSection(section) {
+            document.querySelector('.config-section').style.display = 'none';
+            document.querySelector('.chats-section').style.display = 'none';
+
+            if (section === 'config') {
+                document.querySelector('.config-section').style.display = 'block';
+                loadConfig();
+            } else if (section === 'chats') {
+                document.querySelector('.chats-section').style.display = 'block';
+                loadChats();
+            }
+        }
+
+        async function loadConfig() {
+            const response = await fetch('/api/config');
+            const config = await response.json();
+            const configForm = document.getElementById('config-form');
+            configForm.innerHTML = '';
+            for (const [key, value] of Object.entries(config)) {
+                const inputType = key.includes('KEY') || key.includes('TOKEN') ? 'password' : 'text';
+                const textarea = key.includes('BUSINESS') || key.includes('PRODUCTS_SERVICES') || key.includes('AGENT_CUSTOM_INSTRUCTIONS');
+                configForm.innerHTML += `
+                    <div class="form-group">
+                        <label for="${key}">${key}</label>
+                        ${textarea ? `<textarea class="form-control" id="${key}">${value}</textarea>` : `<input type="${inputType}" class="form-control" id="${key}" value="${value}">`}
+                    </div>
+                `;
+            }
+        }
+
+        async function updateConfig() {
+            const configForm = document.getElementById('config-form');
+            const inputs = configForm.querySelectorAll('input, textarea');
+            const newConfig = {};
+            inputs.forEach(input => {
+                newConfig[input.id] = input.value;
+            });
+            const response = await fetch('/api/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(newConfig)
+            });
+            const result = await response.json();
+            document.getElementById('config-message').textContent = result.message;
+        }
+
+        async function loadChats() {
+            // Fetch chats from the backend
+            const response = await fetch('/api/chats'); // Create an endpoint to fetch chat list
+            const chats = await response.json();
+            const chatsList = document.getElementById('chats-list');
+            chatsList.innerHTML = '';
+            chats.forEach(chat => {
+                const chatItem = document.createElement('div');
+                chatItem.className = 'chat-item';
+                chatItem.textContent = `Transaction ID: ${chat.transaction_id}`;
+                chatItem.onclick = () => loadChatDetails(chat.transaction_id);
+                chatsList.appendChild(chatItem);
+            });
+        }
+
+        async function loadChatDetails(transactionId) {
+            const response = await fetch(`/api/chats/${transactionId}`); // Create an endpoint to fetch chat details
+            const chatDetails = await response.json();
+            const chatDetailsDiv = document.getElementById('chat-details');
+            chatDetailsDiv.innerHTML = `
+                <h4>Chat Details for Transaction ID: ${transactionId}</h4>
+                <pre>${JSON.stringify(chatDetails, null, 2)}</pre>
+            `;
+        }
+
+        function logout() {
+            fetch('/logout')
+                .then(() => window.location.href = '/');
+        }
+    </script>
+</body>
+</html>
