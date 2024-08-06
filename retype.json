@@ -1,0 +1,49 @@
+{
+  "input": "./docs",
+  "output": "./public",
+  "base": "/",
+  "name": "Knotie-AI Documentation",
+  "icon": "info",
+  "search": true,
+  "analytics": {
+    "google": "UA-XXXXXXXXX-X"
+  },
+  "sections": [
+    {
+      "label": "Introduction",
+      "file": "index.md"
+    },
+    {
+      "label": "Prerequisites",
+      "file": "prerequisites.md"
+    },
+    {
+      "label": "Setup",
+      "file": "setup.md"
+    },
+    {
+      "label": "Running Without Docker",
+      "file": "running.md"
+    },
+    {
+      "label": "Configuration",
+      "file": "configuration.md"
+    },
+    {
+      "label": "Testing",
+      "file": "testing.md"
+    },
+    {
+      "label": "Contribution",
+      "file": "contribution.md"
+    },
+    {
+      "label": "Further Improvements",
+      "file": "improvements.md"
+    },
+    {
+      "label": "Code of Conduct",
+      "file": "CODE_OF_CONDUCT.md"
+    }
+  ]
+}
