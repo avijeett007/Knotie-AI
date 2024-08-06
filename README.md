@@ -1,25 +1,12 @@
 
 ## Knotie-AI - A Completely Open-Source Inbound/Outbound AI Sales Agent which can communicate with your potential lead/customer.
 
-## All Contribution are welcome ! Please follow the Contribute.md for the contribution guideline and please avoid updating code directly to 'develop' branch
-
-# AI Sales Agent With Tool/API Calling
+# An AI Sales Agent With Tool/API Calling
 
 ## Description
-This project consists of various Python modules, configuration, and Docker files to set up and run an AI Agent System efficiently. The project is aimed to be run with/Without Docker. If you don't have python installed or don't want to manage separate python env, you may use the docker-compose instruction to run the project.
+This project consists of various Python modules, configuration, and Docker files to set up and run an AI Agent System efficiently. The project is aimed to be run with Docker. You don't need to install python or similar packages anymore to run the project locally. Ofcourse, if you wish to further modify the code, you need to install python and manage python env. Please follow below python setup guide.
 
  Below is the description of each file and their purpose in the project:
-
-- **.env_sample**: A sample environment variable file that should be copied to `.env` for configuring the application secrets and settings.
-- **ai_helpers.py**: Contains helper functions for AI operations, such as interacting with machine learning models or APIs.
-- **app.py**: The main Python Flask application file that defines HTTP routes and the web server logic.
-- **audio_helpers.py**: Includes functions to handle audio processing tasks within the application, such as audio file manipulation or audio stream processing using ElevenLabs API.
-- **config.py**: Configuration file for setting up global variables and application settings.
-- **docker-compose.yml**: Docker Compose file to define and run multi-container Docker applications. Specifies services, networks, and volumes.
-- **Dockerfile**: A Dockerfile to build the Docker image for the application, specifying the environment, dependencies, and commands.
-- **prompts.py**: Likely includes predefined prompts for different logic within this application. Note: This is a very generalized prompts to showcase the capability and give you guidance. You may want to change it as per your business requirement.s
-- **stages.py**: Defines various stages or states of a process in a standard Sales Process, useful for workflow management or state tracking. Note: This is a very generalized stages. You may want to change it as per your business requirements.
-- **tools.py**: Provides additional utility functions or tools that can be used throughout the application for various tasks.
 
 # How to Run the Project
 
@@ -74,6 +61,22 @@ ed port.
   docker-compose build --no-cache
   docker-compose up
   ```
+
+
+## All Contribution are welcome ! Please follow the Contribute.md for the contribution guideline and please avoid updating code directly to 'develop' branch
+
+# Project File Details
+
+- **.env_sample**: A sample environment variable file that should be copied to `.env` for configuring the application secrets and settings.
+- **ai_helpers.py**: Contains helper functions for AI operations, such as interacting with machine learning models or APIs.
+- **app.py**: The main Python Flask application file that defines HTTP routes and the web server logic.
+- **audio_helpers.py**: Includes functions to handle audio processing tasks within the application, such as audio file manipulation or audio stream processing using ElevenLabs API.
+- **config.py**: Configuration file for setting up global variables and application settings.
+- **docker-compose.yml**: Docker Compose file to define and run multi-container Docker applications. Specifies services, networks, and volumes.
+- **Dockerfile**: A Dockerfile to build the Docker image for the application, specifying the environment, dependencies, and commands.
+- **prompts.py**: Likely includes predefined prompts for different logic within this application. Note: This is a very generalized prompts to showcase the capability and give you guidance. You may want to change it as per your business requirement.s
+- **stages.py**: Defines various stages or states of a process in a standard Sales Process, useful for workflow management or state tracking. Note: This is a very generalized stages. You may want to change it as per your business requirements.
+- **tools.py**: Provides additional utility functions or tools that can be used throughout the application for various tasks.
 
 # **Run Code without Docker**
 **If you want to run the code without docker in your local, follow the steps**:
