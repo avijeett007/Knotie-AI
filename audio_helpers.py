@@ -11,10 +11,23 @@ from io import BytesIO
 from typing import IO
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
+import logging
 
-client = ElevenLabs(
-    api_key=Config.ELEVENLABS_API_KEY,
-)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+# ElevenLabs client initialization
+elevenlabs_client = None
+
+def initialize_elevenlabs_client():
+    global elevenlabs_client
+    logger.info(f"Initiating ElevenLabs client")
+    elevenlabs_client = ElevenLabs(api_key=Config.ELEVENLABS_API_KEY)
+
+# client = ElevenLabs(
+#     api_key=Config.ELEVENLABS_API_KEY,
+# )
 
 def text_to_speech(text):
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{Config.VOICE_ID}"
@@ -53,7 +66,7 @@ def text_to_speech_stream(text: str) -> IO[bytes]:
         IO[bytes]: A BytesIO stream containing the audio data.
     """
     # Perform the text-to-speech conversion
-    response = client.text_to_speech.convert(
+    response = elevenlabs_client.text_to_speech.convert(
         voice_id=Config.VOICE_ID,  # Adam pre-made voice
         optimize_streaming_latency="2",
         output_format="mp3_22050_32",
@@ -66,7 +79,7 @@ def text_to_speech_stream(text: str) -> IO[bytes]:
         ),
     )
 
-    print("Streaming audio data...")
+    logger.info(f"Streaming audio data")
 
     # Create a BytesIO object to hold audio data
     audio_stream = BytesIO()

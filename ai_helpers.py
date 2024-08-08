@@ -15,6 +15,10 @@ from flask import session  # Uncomment it after testing.
 from stages import OUTBOUND_CONVERSATION_STAGES, INBOUND_CONVERSATION_STAGES
 from tools import tools_info, OnsiteAppointmentTool, FetchProductPriceTool, CalendlyMeetingTool, \
     AppointmentAvailabilityTool
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # session ={} # Added for testing. remove after testing
 ai_api_key = Config.AI_API_KEY
@@ -29,6 +33,7 @@ which_model = Config.WHICH_MODEL
 llm_model = Config.LLM_MODEL
 # In-memory storage for testing
 conversation_states = {}
+ai = None
 
 # Instantiate the tools if using BaseTool classes
 if Config.USE_LANGCHAIN_TOOL_CLASS:
@@ -38,7 +43,6 @@ if Config.USE_LANGCHAIN_TOOL_CLASS:
     AppointmentAvailabilityTool = AppointmentAvailabilityTool()
 
 if which_model == "GROQ":
-    ai = Groq(api_key=ai_api_key)
     params = {
         "model": llm_model,
         "temperature": 0.5,
@@ -47,15 +51,12 @@ if which_model == "GROQ":
         "top_p": 1
     }  # params["messages"] = prompt
 elif which_model == "OpenAI" or which_model == "OpenRouter":
-    openai.api_key = Config.AI_API_KEY
-    openai.base_url = Config.OPENAI_BASE_URL
     params = {
         "model": llm_model,
         "temperature": 0.5,
         "max_tokens": 100,
     }  # params["messages"] = prompt
 elif which_model == "Anthropic":
-    ai = Anthropic(api_key=ai_api_key)
     params = {
         "model": llm_model,
         "temperature": 0.5,
@@ -63,17 +64,50 @@ elif which_model == "Anthropic":
     }
 
 
-def gen_ai_output(prompt):
+# Method added to reinitialize on updating from UI
+def reinitialize_ai_clients():
+    global ai
+    logger.info(f"Initiating AI client")
+    if Config.WHICH_MODEL == "GROQ":
+        ai = Groq(api_key=Config.AI_API_KEY)
+        params = {
+            "model": llm_model,
+            "temperature": 0.5,
+            "max_tokens": 100,
+            "stream": False,
+            "top_p": 1
+        }        
+    elif Config.WHICH_MODEL == "OpenAI" or Config.WHICH_MODEL == "OpenRouter":
+        openai.api_key = Config.AI_API_KEY
+        openai.base_url = Config.OPENAI_BASE_URL
+        params = {
+            "model": llm_model,
+            "temperature": 0.5,
+            "max_tokens": 100,
+        }
+    elif Config.WHICH_MODEL == "Anthropic":
+        ai = Anthropic(api_key=Config.AI_API_KEY)
+        params = {
+            "model": llm_model,
+            "temperature": 0.5,
+            "max_tokens": 100,
+        }
+
+reinitialize_ai_clients()
+
+def gen_ai_output(prompt, isToolResponse):
     """Generate AI output based on the prompt."""
 
     print("model selected is: ", which_model)
 
     if which_model == "OpenAI" or which_model == "OpenRouter":
         params["messages"] = prompt
-        configuration = Configuration()
-        if configuration.OPENAI_FINE_TUNED_MODEL_ID:
-            print(f"Fine tuned model selected: {configuration.OPENAI_FINE_TUNED_MODEL_ID}")
-            params['model'] = configuration.OPENAI_FINE_TUNED_MODEL_ID
+        if isToolResponse == "no" and Config.OPENAI_FINE_TUNED_MODEL_ID:
+            print(f"Fine tuned model selected: {Config.OPENAI_FINE_TUNED_MODEL_ID}")
+            params['model'] = Config.OPENAI_FINE_TUNED_MODEL_ID
+        if isToolResponse == "yes" and Config.OPENAI_FINE_TUNED_TOOLS_MODEL_ID:
+            print(f"Fine tuned model selected for tool calling: {Config.OPENAI_FINE_TUNED_TOOLS_MODEL_ID}")
+            params['model'] = Config.OPENAI_FINE_TUNED_TOOLS_MODEL_ID
         response = openai.chat.completions.create(**params)
         return response.choices[0].message.content
     if which_model == "GROQ":
@@ -147,8 +181,8 @@ def process_initial_message(call_sid, customer_name, customer_problem):
     conversation_states[call_sid] = {
         'conversation_stage_id': 1
     }
-
-    response = gen_ai_output(message_to_send_to_ai)
+    isToolResponse = "no"
+    response = gen_ai_output(message_to_send_to_ai, isToolResponse)
     return response
 
 
@@ -180,7 +214,8 @@ def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_i
     ]
     message_to_send_to_ai.append(
         {"role": "user", "content": "You Must Respond in the json format specified in system prompt"})
-    ai_output = gen_ai_output(message_to_send_to_ai)
+    isToolResponse = "yes"
+    ai_output = gen_ai_output(message_to_send_to_ai, isToolResponse)
     return ai_output
 
 
@@ -193,6 +228,7 @@ def initiate_inbound_message(call_sid):
         'conversation_stage_id': 1
     }
     return initial_response
+
 
 
 def process_message(call_sid, message_history, user_input):
@@ -252,16 +288,23 @@ def process_message(call_sid, message_history, user_input):
         {
             "role": "system",
             "content": inbound_prompt
+        },
+        {
+            "role": "user",
+            "content": user_input
         }
     ]
-    message_to_send_to_ai_final.append({"role": "user", "content": user_input})
     # session['message_history'].append({"role": "user", "content": user_input})
     print("Calling With inbound template: ", json.dumps(message_history))
-    conversation_cache = CacheManager()
-    cache_result = conversation_cache.search(user_input)
-    if cache_result is None:
-        talkback_response = gen_ai_output(message_to_send_to_ai_final)
-        conversation_cache.put(user_input, talkback_response)
+    isToolResponse = "no"
+    # Check if caching is enabled
+    if Config.CACHE_ENABLED == 'true':
+        conversation_cache = CacheManager()
+        cache_result = conversation_cache.search(user_input)
+        if cache_result is None:
+            talkback_response = gen_ai_output(message_to_send_to_ai_final, isToolResponse)
+            conversation_cache.put(user_input, talkback_response)
+            return talkback_response
+    else:    
+        talkback_response = gen_ai_output(message_to_send_to_ai_final, isToolResponse)
         return talkback_response
-    else:
-        return cache_result

@@ -6,6 +6,6 @@ branding:
   label: Docs
 links:
 - text: Getting Started
-  link: https://retype.com/guides/getting-started/
+  link: https://kno2gether.com/knotie-ai-sales-agent/
 footer:
   copyright: "&copy; Copyright {{ year }}. All rights reserved."

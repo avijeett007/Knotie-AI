@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for, Response, send_from_directory, abort, after_this_request
 from flask_session import Session
 from twilio.twiml.voice_response import VoiceResponse, Gather
 from twilio.rest import Client
@@ -6,8 +6,8 @@ from werkzeug.utils import secure_filename
 from langchain_core.prompts import PromptTemplate
 from flask_cors import CORS
 import os
-from audio_helpers import text_to_speech, text_to_speech_stream, save_audio_file
-from ai_helpers import process_initial_message, process_message, initiate_inbound_message
+from audio_helpers import text_to_speech, text_to_speech_stream, save_audio_file, initialize_elevenlabs_client
+from ai_helpers import process_initial_message, process_message, initiate_inbound_message, reinitialize_ai_clients
 from appUtils import clean_response, delayed_delete, save_message_history, get_message_history, process_elevenlabs_audio
 from config import Config
 import logging
@@ -35,8 +35,6 @@ app.config['SESSION_USE_SIGNER'] = True  # Securely sign the session
 app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
 Session(app)
 app.logger.setLevel(logging.DEBUG)
-
-client = Client(Config.TWILIO_ACCOUNT_SID, Config.TWILIO_AUTH_TOKEN)
 
 # Path to the configuration file
 config_path = 'config.json'
@@ -80,6 +78,21 @@ def init_sqlite_db():
     conn.close()
 
 init_sqlite_db()
+
+# Twilio client initialization
+client = None
+
+def initialize_twilio_client():
+    logger.info(f"Initiating Twilio client")
+    global client
+    client = Client(Config.TWILIO_ACCOUNT_SID, Config.TWILIO_AUTH_TOKEN)
+
+
+# Initialize the clients at the start
+initialize_twilio_client()
+initialize_elevenlabs_client()
+reinitialize_ai_clients()
+
 
 # Route to serve the HTML template
 @app.route('/')
@@ -156,8 +169,14 @@ def update_config():
     new_config = request.json
     with open(config_path, 'w') as config_file:
         json.dump(new_config, config_file)
+
     global config_data
     config_data = new_config
+    # Reload the configuration and reinitialize the Twilio client
+    Config.update_dynamic_config()
+    initialize_twilio_client()
+    initialize_elevenlabs_client()
+    reinitialize_ai_clients()
     return jsonify({"message": "Config updated successfully"}), 200
 
 @app.route('/api/chats', methods=['GET'])
@@ -243,18 +262,22 @@ def start_call():
     
     # save message history in redis
     initial_transcript = "Customer Name:" + customer_name + ". Customer's business Details as filled up in the website:" + customer_businessdetails
+    logger.info(f"redirect url is:  {initial_transcript}")
     message_history.append({"role": "user", "content": initial_transcript})
     message_history.append({"role": "assistant", "content": initial_message})
     save_message_history(unique_id, message_history)
 
-    redirect_url = f"{config_data.get('APP_PUBLIC_GATHER_URL')}?CallSid={unique_id}"
+    redirect_url = f"{Config.APP_PUBLIC_GATHER_URL}?CallSid={unique_id}"
+    public_url = f"{Config.APP_PUBLIC_EVENT_URL}"
+    logger.info(f"redirect url is:  {redirect_url}")
+    logger.info(f"App public url is:  {public_url}")
     response.redirect(redirect_url)
     call = client.calls.create(
         twiml=str(response),
         to=customer_phonenumber,
         from_=config_data.get("TWILIO_FROM_NUMBER"),
         method="GET",
-        status_callback=config_data.get("APP_PUBLIC_EVENT_URL"),
+        status_callback=public_url,
         status_callback_method="POST"
     )
     return jsonify({'message': 'Call initiated', 'call_sid': call.sid})

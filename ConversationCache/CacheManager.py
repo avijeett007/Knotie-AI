@@ -27,9 +27,9 @@ class CacheManager:
                 agent_output TEXT NOT NULL,
                 media_temp_file_path VARCHAR(255) NOT NULL
             )
-            ''')
+        ''')
         cursor.execute('''
-        CREATE VIRTUAL TABLE IF NOT EXISTS queries_and_responses_fts USING fts5(user_input, agent_output, media_temp_file_path)
+            CREATE VIRTUAL TABLE IF NOT EXISTS queries_and_responses_fts USING fts5(user_input, agent_output, media_temp_file_path)
         ''')
         self.connection.commit()
         cursor.close()
@@ -39,14 +39,10 @@ class CacheManager:
     def put(self, user_input: str, agent_output: str, media_temp_file_path: str = ""):
         cursor = self.connection.cursor()
 
-        cursor.execute(f'''
+        cursor.execute('''
             INSERT INTO queries_and_responses (user_input, agent_output, media_temp_file_path)
-                VALUES(
-                '{user_input}',
-                '{agent_output}',
-                '{media_temp_file_path}'
-                )
-            ''')
+                VALUES (?, ?, ?)
+        ''', (user_input, agent_output, media_temp_file_path))
         self.connection.commit()
         cursor.close()
         self._sync_fts()
@@ -55,8 +51,8 @@ class CacheManager:
         cursor = self.connection.cursor()
 
         cursor.execute('''
-        INSERT OR REPLACE INTO queries_and_responses_fts (rowid, user_input, agent_output, media_temp_file_path)
-        SELECT id, user_input, agent_output, media_temp_file_path FROM queries_and_responses
+            INSERT OR REPLACE INTO queries_and_responses_fts (rowid, user_input, agent_output, media_temp_file_path)
+            SELECT id, user_input, agent_output, media_temp_file_path FROM queries_and_responses
         ''')
 
         self.connection.commit()
@@ -65,10 +61,9 @@ class CacheManager:
     def get(self, user_input: str):
         cursor = self.connection.cursor()
 
-        # Step 3: Create a table
-        cursor.execute(f'''
-            SELECT * FROM queries_and_responses WHERE user_input='{user_input}'
-            ''')
+        cursor.execute('''
+            SELECT * FROM queries_and_responses WHERE user_input=?
+        ''', (user_input,))
         result = cursor.fetchone()
         cursor.close()
         return result
@@ -77,17 +72,11 @@ class CacheManager:
         cursor = self.connection.cursor()
 
         cursor.execute('''
-        SELECT user_input, agent_output, media_temp_file_path, bm25(queries_and_responses_fts) AS score
-FROM queries_and_responses_fts
-WHERE queries_and_responses_fts MATCH ?
-ORDER BY
-    CASE
-        WHEN user_input = ? THEN 0
-        ELSE 1
-    END,
-    score DESC
-LIMIT 1
-        ''', (query, query, ))
+            SELECT user_input, agent_output, media_temp_file_path
+            FROM queries_and_responses_fts
+            WHERE queries_and_responses_fts MATCH ?
+            LIMIT 1
+        ''', (query,))
 
         result = cursor.fetchone()
         cursor.close()
@@ -98,8 +87,7 @@ LIMIT 1
             self.connection.close()
 
     def _create_media_folder(self):
-        if not os.path.isdir(
-                self.configuration.CACHE_MANAGER_MEDIA_DIR_PATH):
+        if not os.path.isdir(self.configuration.CACHE_MANAGER_MEDIA_DIR_PATH):
             os.mkdir(self.configuration.CACHE_MANAGER_MEDIA_DIR_PATH)
 
     def _create_media_file_temp_name(self):
