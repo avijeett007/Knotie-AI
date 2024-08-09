@@ -50,56 +50,33 @@ class CacheManager:
     def _sync_fts(self):
         cursor = self.connection.cursor()
 
-<<<<<<< HEAD
-        cursor.execute('''
-            INSERT OR REPLACE INTO queries_and_responses_fts (rowid, user_input, agent_output, media_temp_file_path)
-            SELECT id, user_input, agent_output, media_temp_file_path FROM queries_and_responses
-        ''')
-
-=======
         try:
             cursor.execute('''
             INSERT OR REPLACE INTO queries_and_responses_fts (rowid, user_input, agent_output, media_temp_file_path)
             SELECT id, user_input, agent_output, media_temp_file_path FROM queries_and_responses
             ''')
+            self.connection.commit()
         except sqlite3.OperationalError as e:
             print("SQLite Operational Error:", e)
->>>>>>> bc2446e (fix cache manager)
-        self.connection.commit()
+
         cursor.close()
 
     def get(self, user_input: str):
         cursor = self.connection.cursor()
-
-<<<<<<< HEAD
-        cursor.execute('''
-            SELECT * FROM queries_and_responses WHERE user_input=?
-        ''', (user_input,))
-=======
         try:
             cursor.execute('''SELECT * FROM queries_and_responses WHERE user_input=? LIMIT 1''', (user_input,))
+            result = cursor.fetchone()
         except sqlite3.OperationalError as e:
             print("SQLite Operational Error:", e)
             result = None  # Return None or an empty result on error
 
->>>>>>> bc2446e (fix cache manager)
-        result = cursor.fetchone()
+
         cursor.close()
         return result
 
     def search(self, query: str):
         cursor = self.connection.cursor()
-
-<<<<<<< HEAD
-        cursor.execute('''
-            SELECT user_input, agent_output, media_temp_file_path
-            FROM queries_and_responses_fts
-            WHERE queries_and_responses_fts MATCH ?
-            LIMIT 1
-        ''', (query,))
-=======
         search_query = f'"{query}"'  # Format the query appropriately for MATCH
->>>>>>> bc2446e (fix cache manager)
 
         try:
             cursor.execute('''
@@ -113,10 +90,10 @@ class CacheManager:
                    END,
                    score DESC
                LIMIT 1''', (search_query, query))
+            result = cursor.fetchone()
         except sqlite3.OperationalError as e:
             print("SQLite Operational Error:", e)
             result = None
-        result = cursor.fetchone()
         cursor.close()
         return result
 
