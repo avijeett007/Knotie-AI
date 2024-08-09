@@ -6,6 +6,8 @@ from werkzeug.utils import secure_filename
 from langchain_core.prompts import PromptTemplate
 from flask_cors import CORS
 import os
+import subprocess
+import requests
 from audio_helpers import text_to_speech, text_to_speech_stream, save_audio_file, initialize_elevenlabs_client
 from ai_helpers import process_initial_message, process_message, initiate_inbound_message, reinitialize_ai_clients
 from appUtils import clean_response, delayed_delete, save_message_history, get_message_history, process_elevenlabs_audio
@@ -371,3 +373,37 @@ def event():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+# if __name__ == '__main__':
+#     def start_ngrok():
+#         # Get the Ngrok auth token from the environment variable or config
+#         ngrok_auth_token = os.getenv('NGROK_AUTH_TOKEN', Config.get('NGROK_AUTH_TOKEN'))
+        
+#         if not ngrok_auth_token:
+#             raise ValueError("Ngrok auth token is not set. Please set NGROK_AUTH_TOKEN in config.json or as an environment variable.")
+
+#         # Start ngrok process with auth token
+#         ngrok_process = subprocess.Popen(['ngrok', 'http', '5000', '--authtoken', ngrok_auth_token], stdout=subprocess.PIPE)
+        
+#         # Give ngrok some time to start
+#         time.sleep(3)
+        
+#         # Get the public URL from ngrok's API
+#         response = requests.get('http://localhost:4040/api/tunnels')
+#         data = response.json()
+#         public_url = data['tunnels'][0]['public_url']
+#         return public_url
+
+#     # Check if we should use Ngrok
+#     if Config.get("USE_NGROK", False):
+#         # Start ngrok and get the public URL
+#         public_url = start_ngrok()
+#         print(f" * ngrok tunnel opened at {public_url}")
+
+#         # Update the configuration with the ngrok public URL
+#         Config.APP_PUBLIC_GATHER_URL = public_url + "/gather"
+#         Config.APP_PUBLIC_EVENT_URL = public_url + "/event"
+#     else:
+#         print(" * Ngrok is disabled. Please ensure your own reverse proxy is configured.")
+
+#     # Start the Flask app
+#     app.run(debug=True, host='0.0.0.0', port=5000)

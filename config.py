@@ -41,6 +41,8 @@ class Config:
         cls.TWILIO_AUTH_TOKEN = dynamic_config.get('TWILIO_AUTH_TOKEN', 'Default Twilio Auth Token')
         cls.TWILIO_FROM_NUMBER = dynamic_config.get('TWILIO_FROM_NUMBER', 'Default Twilio Number')
         cls.ELEVENLABS_API_KEY = dynamic_config.get('ELEVENLABS_API_KEY', 'Default Eleven Labs API Key')
+        cls.NGROK_AUTH_TOKEN = dynamic_config.get('NGROK_AUTH_TOKEN', 'NGROK Default Auth Token')
+        cls.USE_NGROK = dynamic_config.get('USE_NGROK', 'true')
         cls.VOICE_ID = dynamic_config.get('VOICE_ID', 'Default Voice ID')
         cls.APP_PUBLIC_URL = dynamic_config.get('APP_PUBLIC_URL', 'https://default-url.com')
         cls.APP_PUBLIC_GATHER_URL = f"{cls.APP_PUBLIC_URL}/gather"

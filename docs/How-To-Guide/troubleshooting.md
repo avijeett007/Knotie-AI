@@ -48,7 +48,7 @@ Stay tuned!
 
 If you're unable to resolve the issue using the above steps, consider reaching out to the community:
 
-- [Join our Discord Community](https://discord.com/invite/link)
-- [Watch the Video Tutorials](https://youtube.com/link-to-videos)
+- [Join our Community](https://community.kno2gether.com/communities/groups/kno2gether-community/home?invite=66b617e90fd0ff23e04efce2)
+- [Watch the Video Tutorials](https://www.youtube.com/channel/UCxgkN3luQgLQOd_L7tbOdhQ)
 
 We’re here to help!
