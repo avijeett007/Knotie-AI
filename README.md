@@ -28,9 +28,9 @@ For detailed documentation and setup instructions, please visit the [Knotie-AI D
 
 [![Knotie-AI Demo Video](https://img.youtube.com/vi/your-demo-video-link/hqdefault.jpg)](https://www.youtube.com/watch?v=your-demo-video-link)
 
-Check out our [YouTube Demo Video](https://www.youtube.com/watch?v=your-demo-video-link) to see Knotie-AI in action!
+Check out our [YouTube Demo Video](https://www.youtube.com/watch?v=CVsPD0sPMtM&t=524s) to see Knotie-AI in action!
 
-[![Subscribe](https://img.shields.io/badge/Subscribe-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/channel/your-channel-link?sub_confirmation=1)
+[![Subscribe](https://img.shields.io/badge/Subscribe-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/channel/UCxgkN3luQgLQOd_L7tbOdhQ?sub_confirmation=1)
 
 ---
 
@@ -45,12 +45,13 @@ We welcome all contributions to the Knotie-AI project! If you have ideas for new
 
 Please see our [Code of Conduct](https://knotie-ai.pages.dev/CODE_OF_CONDUCT) for guidelines on contributing.
 
-Join our [Discord Community](https://discord.com/invite/7UKpgUbEXf) to discuss features, ask questions, and share feedback.
+Join our [Discord Community](https://discord.com/invite/7UKpgUbEXf).
+Join our [Kno2gether Club](https://community.kno2gether.com/communities/groups/kno2gether-community/home?invite=66b617e90fd0ff23e04efce2) to discuss features, ask questions, and share feedback.
 
 ---
 
 ## 📚 Documentation
 
 - **Documentation Site**: [Knotie-AI Docs](https://knotie-ai.pages.dev/)
-- **GitHub Repository**: [Knotie-AI on GitHub](https://github.com/your-repo/knotie-ai)
+- **GitHub Repository**: [Knotie-AI on GitHub](https://github.com/avijeett007/knotie-ai)
 - **Code of Conduct**: [Read Here](https://knotie-ai.pages.dev/CODE_OF_CONDUCT)
