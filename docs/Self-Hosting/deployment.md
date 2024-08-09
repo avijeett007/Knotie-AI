@@ -1,14 +1,19 @@
 ---
-title: Running Without Docker
-description: Instructions to run Knotie-AI locally without Docker, including setting up Python and dependencies.
+title: Run The Code Locally
+description: Instruction to run/deploy Knotie-AI with/without docker.
 tags: Local Setup, Python, Redis, Knotie-AI
 ---
 
-# 🚀 Running Code without Docker
+# 🚀 Running Code using python/conda env
 
 If you want to run the code without Docker locally, follow these steps:
 
 1. 🛠️ **Run Redis locally** (You can ask ChatGPT how to run Redis. Make sure to run it on port 6379). The current code uses Redis for state management (such as Conversation history etc.).
+
+Alternatively, use the below command from knotie-ai root folder (make sure you have docker and docker-compose installed and running)
+```bash
+docker compose -f docker-compose-redis-only.yaml up -d
+```
 
 2. 🐍 **Install Python 3.11 and above**.
 
@@ -26,7 +31,7 @@ If you want to run the code without Docker locally, follow these steps:
 
 6. 📥 **Download the zip or clone the repo**:
    ```bash
-   git clone https://github.com/your-repo/knotie-ai.git
+   git clone https://github.com/avijeett007/Knotie-AI.git
    cd knotie-ai
    ```
 

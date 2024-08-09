@@ -5,45 +5,97 @@
   "name": "Knotie-AI Documentation",
   "icon": "info",
   "search": true,
-  "analytics": {
-    "google": "UA-XXXXXXXXX-X"
-  },
   "sections": [
     {
       "label": "Introduction",
       "file": "index.md"
     },
     {
-      "label": "Prerequisites",
-      "file": "prerequisites.md"
+      "label": "Self-Hosting Guide",
+      "icon": "server",
+      "sections": [
+        {
+          "label": "Prerequisites",
+          "file": "Self-Hosting/prerequisites.md"
+        },
+        {
+          "label": "Configuration & Secret Management",
+          "file": "Self-Hosting/installation.md"
+        },
+        {
+          "label": "Configuration",
+          "file": "Self-Hosting/configuration.md"
+        },
+        {
+          "label": "Deployment",
+          "file": "Self-Hosting/deployment.md"
+        },
+        {
+          "label": "Setup",
+          "file": "setup.md"
+        }
+      ]
     },
     {
-      "label": "Setup",
-      "file": "setup.md"
+      "label": "Cloud Guide",
+      "icon": "cloud",
+      "sections": [
+        {
+          "label": "Overview",
+          "file": "Cloud-Hosting/index.md"
+        },
+        {
+          "label": "Setup",
+          "file": "Cloud-Hosting/setup.md"
+        },
+        {
+          "label": "Scaling",
+          "file": "Cloud-Hosting/scaling.md"
+        }
+      ]
     },
     {
-      "label": "Running Without Docker",
-      "file": "running.md"
+      "label": "How-To Guide",
+      "icon": "lightbulb",
+      "sections": [
+        {
+          "label": "Overview",
+          "file": "How-To-Guide/index.md"
+        },
+        {
+          "label": "Usage",
+          "file": "How-To-Guide/usage.md"
+        },
+        {
+          "label": "Troubleshooting",
+          "file": "How-To-Guide/troubleshooting.md"
+        }
+      ]
     },
     {
-      "label": "Configuration",
-      "file": "configuration.md"
-    },
-    {
-      "label": "Testing",
-      "file": "testing.md"
-    },
-    {
-      "label": "Contribution",
-      "file": "contribution.md"
-    },
-    {
-      "label": "Further Improvements",
-      "file": "improvements.md"
-    },
-    {
-      "label": "Code of Conduct",
-      "file": "CODE_OF_CONDUCT.md"
+      "label": "Other Guides",
+      "sections": [
+        {
+          "label": "Testing",
+          "file": "testing.md"
+        },
+        {
+          "label": "Configuration",
+          "file": "configuration.md"
+        },
+        {
+          "label": "Contribution",
+          "file": "contribution.md"
+        },
+        {
+          "label": "Further Improvements",
+          "file": "improvements.md"
+        },
+        {
+          "label": "Code of Conduct",
+          "file": "CODE_OF_CONDUCT.md"
+        }
+      ]
     }
   ]
 }

@@ -14,7 +14,7 @@ All contributions are welcome! Please follow the guidelines below to contribute 
 
 2. **Clone your fork**: Clone the forked repository to your local machine.
    ```bash
-   git clone https://github.com/your-username/knotie-ai.git
+   git clone https://github.com/avijeett007/knotie-ai.git
    cd knotie-ai
    ```
 

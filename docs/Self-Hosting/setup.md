@@ -1,16 +1,16 @@
 ---
-title: Setup
+title: Run The Code as Docker Container
 description: Steps to set up Knotie-AI using Docker and configuring environment variables.
 tags: Setup, Docker, Configuration, Knotie-AI
 ---
 
-# ⚙️ Setup
+# ⚙️ Run Steps (As Docker Service)
 
 ## Steps to Run
 
 1. 📥 **Clone the repository** or download the files to your local machine.
    ```bash
-   git clone https://github.com/your-repo/knotie-ai.git
+   git clone https://github.com/avijeett007/knotie-ai.git
    cd knotie-ai
    ```
 

@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Kno2gether</title>
+    <title>Admin - Knotie-AI</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .container { max-width: 800px; margin-top: 50px; }
-        .config-section, .chats-section { display: none; }
+        .config-section, .chats-section, .form-section { display: none; }
     </style>
 </head>
 <body>
@@ -16,6 +16,7 @@
         <p class="lead">Manage your settings and view interactions</p>
         <button class="btn btn-secondary" onclick="showSection('config')">Settings</button>
         <button class="btn btn-secondary" onclick="showSection('chats')">Chats</button>
+        <button class="btn btn-secondary" onclick="showSection('form')">Admin Form</button>
         <button class="btn btn-danger float-right" onclick="logout()">Logout</button>
 
         <div class="config-section mt-4">
@@ -30,12 +31,45 @@
             <div id="chats-list"></div>
             <div id="chat-details" class="mt-4"></div>
         </div>
+
+        <div class="form-section mt-4">
+            <h3>Knotie AI Admin Form</h3>
+            <iframe
+                src="https://api.leadconnectorhq.com/widget/form/j9kpCI8SwmuwarKDR97d"
+                style="width:100%;height:646px;border:none;border-radius:3px"
+                id="inline-j9kpCI8SwmuwarKDR97d" 
+                data-layout="{'id':'INLINE'}"
+                data-trigger-type="alwaysShow"
+                data-trigger-value=""
+                data-activation-type="alwaysActivated"
+                data-activation-value=""
+                data-deactivation-type="neverDeactivate"
+                data-deactivation-value=""
+                data-form-name="Knotie AI Admin Form"
+                data-height="646"
+                data-layout-iframe-id="inline-j9kpCI8SwmuwarKDR97d"
+                data-form-id="j9kpCI8SwmuwarKDR97d"
+                title="Knotie AI Admin Form">
+            </iframe>
+            <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+        </div>
     </div>
 
     <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Check if the user has already filled out the form
+            const formFilled = getCookie('formFilled');
+            if (formFilled) {
+                showSection('config');
+            } else {
+                showSection('form');
+            }
+        });
+
         function showSection(section) {
             document.querySelector('.config-section').style.display = 'none';
             document.querySelector('.chats-section').style.display = 'none';
+            document.querySelector('.form-section').style.display = 'none';
 
             if (section === 'config') {
                 document.querySelector('.config-section').style.display = 'block';
@@ -43,6 +77,8 @@
             } else if (section === 'chats') {
                 document.querySelector('.chats-section').style.display = 'block';
                 loadChats();
+            } else if (section === 'form') {
+                document.querySelector('.form-section').style.display = 'block';
             }
         }
 
@@ -109,6 +145,41 @@
         function logout() {
             fetch('/logout')
                 .then(() => window.location.href = '/');
+        }
+
+        // Utility functions for cookie management
+        function setCookie(name, value, days) {
+            const d = new Date();
+            d.setTime(d.getTime() + (days*24*60*60*1000));
+            const expires = "expires="+ d.toUTCString();
+            document.cookie = name + "=" + value + ";" + expires + ";path=/";
+        }
+
+        function getCookie(name) {
+            const cname = name + "=";
+            const decodedCookie = decodeURIComponent(document.cookie);
+            const ca = decodedCookie.split(';');
+            for(let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(cname) === 0) {
+                    return c.substring(cname.length, c.length);
+                }
+            }
+            return "";
+        }
+
+        function formSubmitted() {
+            setCookie('formFilled', 'true', 365);  // Save a cookie for 1 year
+            showSection('config');  // Show the settings section after form is filled
+        }
+
+        // Bind the form submission to formSubmitted function
+        document.getElementById('inline-j9kpCI8SwmuwarKDR97d').onload = function() {
+            const formIframe = document.getElementById('inline-j9kpCI8SwmuwarKDR97d');
+            formIframe.contentWindow.addEventListener('submit', formSubmitted);
         }
     </script>
 </body>
