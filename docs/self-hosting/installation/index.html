@@ -9,33 +9,34 @@
     <meta name="generator" content="Retype 3.5.0">
 
     <!-- Primary Meta Tags -->
-    <title>Contribution</title>
-    <meta name="title" content="Contribution">
-    <meta name="description" content="Guidelines for contributing to the Knotie-AI project.">
+    <title>⚙️ Configuration &amp; Secret Management</title>
+    <meta name="title" content="⚙️ Configuration & Secret Management">
+    <meta name="description" content="Manage your configurations and secrets easily using the Admin UI in Knotie-AI.">
 
     <!-- Canonical -->
-    <link rel="canonical" href="https://knotie-ai.pages.dev/docs/contribution/">
+    <link rel="canonical" href="https://knotie-ai.pages.dev/docs/self-hosting/installation/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://knotie-ai.pages.dev/docs/contribution/">
-    <meta property="og:title" content="Contribution">
-    <meta property="og:description" content="Guidelines for contributing to the Knotie-AI project.">
+    <meta property="og:url" content="https://knotie-ai.pages.dev/docs/self-hosting/installation/">
+    <meta property="og:title" content="⚙️ Configuration & Secret Management">
+    <meta property="og:description" content="Manage your configurations and secrets easily using the Admin UI in Knotie-AI.">
+    <meta property="og:image" content="https://knotie-ai.pages.dev/admin_settings.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://knotie-ai.pages.dev/docs/contribution/">
-    <meta property="twitter:title" content="Contribution">
-    <meta property="twitter:description" content="Guidelines for contributing to the Knotie-AI project.">
+    <meta property="twitter:url" content="https://knotie-ai.pages.dev/docs/self-hosting/installation/">
+    <meta property="twitter:title" content="⚙️ Configuration & Secret Management">
+    <meta property="twitter:description" content="Manage your configurations and secrets easily using the Admin UI in Knotie-AI.">
+    <meta property="twitter:image" content="https://knotie-ai.pages.dev/admin_settings.png">
 
     <script data-cfasync="false">(function () { var el = document.documentElement, m = localStorage.getItem("doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
-    <link href="../../resources/css/retype.css?v=3.5.0.776533352433" rel="stylesheet">
+    <link href="../../../resources/css/retype.css?v=3.5.0.776533352433" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=3.5.0.776533352433" data-turbo-eval="false" defer></script>
-    <script data-cfasync="false" src="../../resources/js/retype.js?v=3.5.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.5.0.776533352433" data-turbo-eval="false" defer></script>
-    <script id="prism-js" data-cfasync="false" src="../../resources/js/prism.js?v=3.5.0.776533352433" defer></script>
+    <script data-cfasync="false" src="../../../resources/js/config.js?v=3.5.0.776533352433" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../../resources/js/retype.js?v=3.5.0" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../../resources/js/lunr.js?v=3.5.0.776533352433" data-turbo-eval="false" defer></script>
 </head>
 <body>
     <div id="docs-app" class="relative text-base antialiased text-gray-700 bg-white font-body dark:bg-dark-850 dark:text-dark-300">
@@ -50,7 +51,7 @@
                 <!-- Logo -->
                 <div class="flex items-center justify-between h-full py-2 md:w-75">
                     <div class="flex items-center px-2 md:px-6">
-                        <a id="docs-site-logo" href="../../" class="flex items-center leading-snug text-2xl">
+                        <a id="docs-site-logo" href="../../../" class="flex items-center leading-snug text-2xl">
                             <span class="dark:text-white font-semibold line-clamp-1 md:line-clamp-2">Knotie-AI</span>
                         </a><span class="hidden px-2 py-1 ml-4 text-sm font-semibold leading-none text-root-logo-label-text bg-root-logo-label-bg rounded-sm md:inline-block">Docs</span>
                     </div>
@@ -164,73 +165,97 @@
                                 <!-- Rendered if sidebar right is enabled -->
                                 <div id="docs-sidebar-right-toggle"></div>
                                 <!-- Page content  -->
-<doc-anchor-target id="contribution-guidelines" class="break-words">
+<doc-anchor-target id="configuration-and-secret-management" class="break-words">
     <h1>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#contribution-guidelines">#</doc-anchor-trigger>
-        <span><span class="docs-emoji">&#x1F91D;</span> Contribution Guidelines</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#configuration-and-secret-management">#</doc-anchor-trigger>
+        <span>Configuration and Secret Management</span>
     </h1>
 </doc-anchor-target>
-<p>All contributions are welcome! Please follow the guidelines below to contribute to the Knotie-AI project.</p>
-<doc-anchor-target id="guidelines">
+<p>All the configurations and secrets for Knotie-AI are now managed through <code v-pre>config.json</code>. The recommended way to manage <code v-pre>config.json</code> is by using the Admin UI, which allows for hotloading of configurations.
+Run The Code using either <a href="../deployment/">Directly/Locally</a> or using <a href="../setup/">docker service</a> or in the <a href="../../cloud-hosting/">cloud</a></p>
+<hr>
+<doc-anchor-target id="accessing-the-admin-ui">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#guidelines">#</doc-anchor-trigger>
-        <span><span class="docs-emoji">&#x1F4DD;</span> Guidelines</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#accessing-the-admin-ui">#</doc-anchor-trigger>
+        <span>Accessing the Admin UI</span>
     </h2>
 </doc-anchor-target>
 <ol>
-<li><p><strong>Fork the repository</strong>: Click on the &quot;Fork&quot; button at the top right corner of the repository page to create a copy of the repository in your GitHub account.</p>
+<li><p><strong>Start the Application:</strong> Once the app is started, head over to your browser and navigate to: https://localhost:5000 (This is the default URL if you&#x27;re running the application locally.)
+Or navigate to https://your_server_ip:5000
+or navigate to https://your_application_public_url (If you&#x27;re running ngrok or running this app behind an Proxy/LB)</p>
 </li>
-<li><p><strong>Clone your fork</strong>: Clone the forked repository to your local machine.</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre class="language-bash"><code v-pre class="language-bash">git clone https://github.com/avijeett007/knotie-ai.git
-cd knotie-ai</code></pre>
-</doc-codeblock></div>
-</li>
-<li><p><strong>Create a new branch</strong>: Create a new branch for your feature or bugfix.</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre class="language-bash"><code v-pre class="language-bash">git checkout -b feature-name</code></pre>
-</doc-codeblock></div>
-</li>
-<li><p><strong>Make your changes</strong>: Make the necessary changes in your local repository.</p>
-</li>
-<li><p><strong>Commit your changes</strong>: Commit your changes with a descriptive commit message.</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre class="language-bash"><code v-pre class="language-bash">git add .
-git commit -m &quot;Description of the feature or bugfix&quot;</code></pre>
-</doc-codeblock></div>
-</li>
-<li><p><strong>Push to your fork</strong>: Push the changes to your forked repository.</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre class="language-bash"><code v-pre class="language-bash">git push origin feature-name</code></pre>
-</doc-codeblock></div>
-</li>
-<li><p><strong>Create a Pull Request</strong>: Go to the original repository and create a Pull Request to merge your changes.</p>
-</li>
-<li><p><strong>Review and Discuss</strong>: Participate in the review process and address any feedback or changes requested by the maintainers.</p>
+<li><p><strong>Login:</strong> Use the following default credentials to log in:</p>
+<ul>
+<li><strong>Username:</strong> <code v-pre>admin</code></li>
+<li><strong>Password:</strong> <code v-pre>admin</code></li>
+</ul>
+<blockquote>
+<p><strong>Important:</strong> On your first login, you will be prompted to change the default credentials. Please remember the new password, as it is required for future logins.</p>
+</blockquote>
 </li>
 </ol>
-<doc-anchor-target id="code-of-conduct">
+<hr>
+<doc-anchor-target id="updating-configurations-and-secrets">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#code-of-conduct">#</doc-anchor-trigger>
-        <span><span class="docs-emoji">&#x1F4DC;</span> Code of Conduct</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#updating-configurations-and-secrets">#</doc-anchor-trigger>
+        <span>Updating Configurations and Secrets</span>
     </h2>
 </doc-anchor-target>
-<p>Please adhere to the <a href="../code_of_conduct/">Code of Conduct</a> in all your interactions with the project.</p>
-<doc-anchor-target id="join-the-discussion">
+<ol>
+<li><p><strong>Access the Settings:</strong></p>
+<ul>
+<li>Once logged in, locate the <strong>Settings</strong> link in the Admin UI. Click on it to access the configuration and secret management section.</li>
+</ul>
+</li>
+<li><p><strong>Edit Configurations:</strong></p>
+<ul>
+<li>You can now update the necessary configuration and secret sections using the Admin UI.</li>
+</ul>
+</li>
+<li><p><strong>Save Changes:</strong></p>
+<ul>
+<li>Ensure you hit the <strong>Update</strong> button to save your changes. This action will reinitialize all necessary clients to apply the new settings.</li>
+</ul>
+</li>
+</ol>
+<hr>
+<doc-anchor-target id="placeholder-for-screenshots">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#join-the-discussion">#</doc-anchor-trigger>
-        <span><span class="docs-emoji">&#x1F4AC;</span> Join the Discussion</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#placeholder-for-screenshots">#</doc-anchor-trigger>
+        <span>Placeholder for Screenshots</span>
     </h2>
 </doc-anchor-target>
-<p>Join our <a href="https://discord.com/invite/7UKpgUbEXf">Discord Community</a> to discuss features, ask questions, and share feedback.</p>
+<p><figure class="content-center">
+    <img src="../../../admin_settings.png" alt="Admin Configuration Screen">
+    <figcaption class="caption">Admin Configuration Screen</figcaption>
+</figure>
+<figure class="content-center">
+    <img src="../../../admin_save.png" alt="Admin Configuration Save Changes">
+    <figcaption class="caption">Admin Configuration Save Changes</figcaption>
+</figure>
+</p>
+<hr>
+<doc-anchor-target id="important-notes">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#important-notes">#</doc-anchor-trigger>
+        <span>Important Notes</span>
+    </h2>
+</doc-anchor-target>
+<ul>
+<li><strong>Remember Your Password:</strong> After changing your password on the first login, ensure you remember it. If you forget it, you will need to follow the Reset User Documentation(#) to regain access.</li>
+<li><strong>Reinitialization:</strong> Updating the configurations using the Admin UI triggers reinitialization of clients, so it&#x27;s crucial to ensure that all settings are correct before applying them.</li>
+</ul>
+<hr>
+<p><em>Stay tuned for more updates and screenshots to make your configuration management experience even smoother!</em></p>
 
                                 <div class="flex items-center mt-6 mb-6 clear-both">
                                     <span>
-                                        <a href="../../tags/">
+                                        <a href="../../../tags/">
                                             <svg class="inline-block -mb-px mr-1.5 text-blue-500 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" overflow="visible" fill="currentColor"><g><path d="M21.3 9.88l-8.59-8.59C12.52 1.11 12.27 1 12 1H2c-.55 0-1 .45-1 1v10c0 .27.11.52.29.71l8.59 8.58c.57.57 1.32.88 2.12.88s1.55-.31 2.12-.88l7.17-7.17a3.009 3.009 0 00.01-4.24zm-1.42 2.82l-7.17 7.17c-.39.39-1.02.39-1.42 0L3 11.59V3h8.59l8.29 8.29c.39.39.39 1.03 0 1.41z" /><path d="M7.01 6C6.45 6 6 6.45 6 7s.45 1 1 1 1-.45 1-1-.44-1-.99-1z" /></g></svg>
                                         </a>
-                                        <span class="mr-2"><a href="../../tags/contribution-open-source-knotie-ai/" class="no-link inline-flex align-middle items-center justify-center font-medium leading-none whitespace-nowrap text-blue-500 dark:text-blue-400 border border-blue-500 dark:border-blue-400 hover:bg-blue-100 dark:hover:bg-transparent dark:hover:border-blue-200 dark:hover:text-blue-200 transition-colors duration-200 ease-out h-6 px-2 text-xs rounded-md">
-                                    <span>contribution, open source, knotie-ai</span>
+                                        <span class="mr-2"><a href="../../../tags/local-setup-python-redis-knotie-ai-secret-management-config-management/" class="no-link inline-flex align-middle items-center justify-center font-medium leading-none whitespace-nowrap text-blue-500 dark:text-blue-400 border border-blue-500 dark:border-blue-400 hover:bg-blue-100 dark:hover:bg-transparent dark:hover:border-blue-200 dark:hover:text-blue-200 transition-colors duration-200 ease-out h-6 px-2 text-xs rounded-md">
+                                    <span>local setup, python, redis, knotie-ai, secret management, config management</span>
                                 </a></span>
                                     </span>
                                 </div>
@@ -242,20 +267,20 @@ git commit -m &quot;Description of the feature or bugfix&quot;</code></pre>
                             
                                 <nav class="flex mt-14">
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../docs/code_of_conduct/">
+                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../../docs/self-hosting/">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                             <span>
                                                 <span class="block text-xs font-normal text-gray-400 dark:text-dark-400">Previous</span>
-                                                <span class="block mt-1">Code of Conduct</span>
+                                                <span class="block mt-1">Self-​Hosting Guide</span>
                                             </span>
                                         </a>
                                     </div>
                             
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../docs/improvements/">
+                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../../docs/self-hosting/configuration/">
                                             <span>
                                                 <span class="block text-xs font-normal text-right text-gray-400 dark:text-dark-400">Next</span>
-                                                <span class="block mt-1">Further Improvements</span>
+                                                <span class="block mt-1">Configuration</span>
                                             </span>
                                             <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                         </a>
@@ -299,6 +324,6 @@ git commit -m &quot;Description of the feature or bugfix&quot;</code></pre>
 
     <div id="docs-overlay-target"></div>
 
-    <script data-cfasync="false">window.__DOCS__ = { "title": "Contribution", level: 2, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
+    <script data-cfasync="false">window.__DOCS__ = { "title": "⚙️ Configuration & Secret Management", level: 3, icon: "file", hasPrism: false, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
 </body>
 </html>

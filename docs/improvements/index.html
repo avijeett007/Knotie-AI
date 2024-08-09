@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.5.0.776469112237">
+    <meta name="turbo-cache-control" content="no-cache" data-turbo-track="reload" data-track-token="3.5.0.776533352433">
 
     <!-- See retype.com -->
     <meta name="generator" content="Retype 3.5.0">
@@ -14,27 +14,27 @@
     <meta name="description" content="Suggestions for further improvements and future work on Knotie-AI.">
 
     <!-- Canonical -->
-    <link rel="canonical" href="/docs/improvements/">
+    <link rel="canonical" href="https://knotie-ai.pages.dev/docs/improvements/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="/docs/improvements/">
+    <meta property="og:url" content="https://knotie-ai.pages.dev/docs/improvements/">
     <meta property="og:title" content="Further Improvements">
     <meta property="og:description" content="Suggestions for further improvements and future work on Knotie-AI.">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="/docs/improvements/">
+    <meta property="twitter:url" content="https://knotie-ai.pages.dev/docs/improvements/">
     <meta property="twitter:title" content="Further Improvements">
     <meta property="twitter:description" content="Suggestions for further improvements and future work on Knotie-AI.">
 
     <script data-cfasync="false">(function () { var el = document.documentElement, m = localStorage.getItem("doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
-    <link href="../../resources/css/retype.css?v=3.5.0.776469112237" rel="stylesheet">
+    <link href="../../resources/css/retype.css?v=3.5.0.776533352433" rel="stylesheet">
 
-    <script data-cfasync="false" src="../../resources/js/config.js?v=3.5.0.776469112237" data-turbo-eval="false" defer></script>
+    <script data-cfasync="false" src="../../resources/js/config.js?v=3.5.0.776533352433" data-turbo-eval="false" defer></script>
     <script data-cfasync="false" src="../../resources/js/retype.js?v=3.5.0" data-turbo-eval="false" defer></script>
-    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.5.0.776469112237" data-turbo-eval="false" defer></script>
+    <script id="lunr-js" data-cfasync="false" src="../../resources/js/lunr.js?v=3.5.0.776533352433" data-turbo-eval="false" defer></script>
 </head>
 <body>
     <div id="docs-app" class="relative text-base antialiased text-gray-700 bg-white font-body dark:bg-dark-850 dark:text-dark-300">
@@ -175,9 +175,9 @@
 </li>
 <li><p><strong>Adjust Sales Stages</strong>: Adjust Sales Stages based on your requirement. The current Sales Stages provided in <code v-pre>stages.py</code> are very generalized and inspired by the &#x27;SalesGPT&#x27; Open Source Project.</p>
 </li>
-<li><p><strong>Test AI Outputs</strong>: If you want to test AI outputs before integrating with Twilio and ElevenLabs API first, there is a section commented out in <code v-pre>ai_helpers.py</code>. You can modify and use that section to test. Only make changes to the file if you have knowledge in Python; otherwise, it may break the application.</p>
+<li><p><strong>Test AI Outputs</strong>: If you want to test AI outputs before integrating with Twilio and ElevenLabs API first, use the <code v-pre>testAISalesAgent.py</code> to do the communication with AI Sales agent in text format. Adjust your prompts accordingly &amp; configuration.</p>
 </li>
-<li><p><strong>Evaluation Script</strong>: An <code v-pre>evaluation.py</code> will be created to allow you to evaluate and test AI Agents before you run it for your use case (This is currently Work In Progress).</p>
+<li><p><strong>Evaluation Script</strong>: An <code v-pre>testAISalesAgent.py</code> will be created to allow you to evaluate and test AI Agents before you run it for your use case (This is Completed now).</p>
 </li>
 <li><p><strong>State Management</strong>: The current code relies on Redis for in-memory state management. File-based and cloud database support will be included for users who can&#x27;t run Docker in their local (Redis in their local) due to lower system specification. (Work In Progress).</p>
 </li>
@@ -185,7 +185,9 @@
 </li>
 <li><p><strong>Wordpress Plugin</strong>: The Wordpress plugin will be updated to support tool calling, email address collection from customers, etc. (Work In Progress).</p>
 </li>
-<li><p><strong>Suggestions and Feedback</strong>: If you have any other suggestions, please join the <a href="https://discord.com/invite/7UKpgUbEXf">Discord</a> and raise your suggestion or feedback using the <strong>gumroad-product-support</strong> channel.</p>
+<li><p><strong>Suggestions and Feedback</strong>: If you have any other suggestions, please join the <a href="https://community.kno2gether.com/communities/groups/kno2gether-community/home?invite=66b617e90fd0ff23e04efce2">Community</a> and raise your suggestion or feedback using the <strong>Feedbacks/Suggestions</strong> channel.</p>
+</li>
+<li><p><strong>Join Private Knotie-AI Channel</strong> : If you wish to contribute as developer or hosting with us, you can get access to our Private Knotie-AI Channel in the Community. Please raise a direct request by sending email to <a href="mailto:support@kno2gether.com">support@kno2gether.com</a>.</p>
 </li>
 </ol>
 
@@ -217,10 +219,10 @@
                                     </div>
                             
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../docs/prerequisites/">
+                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../docs/testing/">
                                             <span>
                                                 <span class="block text-xs font-normal text-right text-gray-400 dark:text-dark-400">Next</span>
-                                                <span class="block mt-1">Prerequisites</span>
+                                                <span class="block mt-1">Testing</span>
                                             </span>
                                             <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                         </a>
