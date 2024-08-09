@@ -25,9 +25,6 @@ def initialize_elevenlabs_client():
     logger.info(f"Initiating ElevenLabs client")
     elevenlabs_client = ElevenLabs(api_key=Config.ELEVENLABS_API_KEY)
 
-# client = ElevenLabs(
-#     api_key=Config.ELEVENLABS_API_KEY,
-# )
 
 def text_to_speech(text):
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{Config.VOICE_ID}"

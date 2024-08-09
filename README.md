@@ -26,9 +26,14 @@ For detailed documentation and setup instructions, please visit the [Knotie-AI D
 
 ## 🎥 Demo Video
 
-[![Knotie-AI Demo Video](https://img.youtube.com/vi/your-demo-video-link/hqdefault.jpg)](https://www.youtube.com/watch?v=your-demo-video-link)
+Watch the Knotie-AI demo video to see it in action:
 
-Check out our [YouTube Demo Video](https://www.youtube.com/watch?v=CVsPD0sPMtM&t=524s) to see Knotie-AI in action!
+<div style="text-align: center;">
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/CVsPD0sPMtM" 
+    title="Knotie-AI Demo Video" frameborder="0" 
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
+    </iframe>
+</div>
 
 [![Subscribe](https://img.shields.io/badge/Subscribe-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/channel/UCxgkN3luQgLQOd_L7tbOdhQ?sub_confirmation=1)
 
