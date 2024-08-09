@@ -35,6 +35,7 @@ app.config['SESSION_USE_SIGNER'] = True  # Securely sign the session
 app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
 Session(app)
 app.logger.setLevel(logging.DEBUG)
+redis_client = redis.Redis(host='redis', port=6379, db=0, decode_responses=True)
 
 # Path to the configuration file
 config_path = 'config.json'
@@ -184,23 +185,22 @@ def get_chats():
     if 'logged_in' not in session:
         return jsonify({"error": "Not logged in"}), 403
 
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT DISTINCT transaction_id FROM chat_history')
-    transactions = cursor.fetchall()
-    conn.close()
-    return jsonify([transaction[0] for transaction in transactions])
+    # Fetch all keys (transaction IDs) from Redis
+    keys = redis_client.keys('*')
+    logger.info(f"list of keys are:  {keys}")
+    return jsonify(keys)
 
 @app.route('/api/chat/<transaction_id>', methods=['GET'])
 def get_chat(transaction_id):
     if 'logged_in' not in session:
         return jsonify({"error": "Not logged in"}), 403
 
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT role, content FROM chat_history WHERE transaction_id = ?', (transaction_id,))
-    chat_history = cursor.fetchall()
-    conn.close()
+    # Fetch chat history for the given transaction ID from Redis
+    chat_history = get_message_history(transaction_id)
+    
+    if not chat_history:
+        return jsonify({"error": "No chat history found"}), 404
+    
     return jsonify(chat_history)
 
 @app.route('/audio/<filename>')
