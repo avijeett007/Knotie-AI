@@ -1,4 +1,17 @@
-# Knotie-AI
+<p align="center">
+    <!-- Placeholder for Logo Icon -->
+    <img src="./Knotie-ai.png" alt="Knotie-AI Logo" width="150" height="150">
+</p>
+
+<h1 align="center">Knotie-AI</h1>
+
+<p align="center">
+    <a href="https://buymeacoffee.com/kno2gether">
+        <img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee">
+    </a>
+</p>
+
+---
 
 Knotie-AI is a completely open-source inbound/outbound AI Sales Agent that can communicate with your potential leads and customers.
 
@@ -28,14 +41,18 @@ For detailed documentation and setup instructions, please visit the [Knotie-AI D
 
 Watch the Knotie-AI demo video to see it in action:
 
-<div style="text-align: center;">
+<p align="center">
     <iframe width="560" height="315" src="https://www.youtube.com/embed/CVsPD0sPMtM" 
     title="Knotie-AI Demo Video" frameborder="0" 
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
     </iframe>
-</div>
+</p>
 
-[![Subscribe](https://img.shields.io/badge/Subscribe-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/channel/UCxgkN3luQgLQOd_L7tbOdhQ?sub_confirmation=1)
+<p align="center">
+    <a href="https://www.youtube.com/channel/UCxgkN3luQgLQOd_L7tbOdhQ?sub_confirmation=1">
+        <img src="https://img.shields.io/badge/Subscribe-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Subscribe">
+    </a>
+</p>
 
 ---
 
