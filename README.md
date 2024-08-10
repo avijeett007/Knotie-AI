@@ -42,10 +42,9 @@ For detailed documentation and setup instructions, please visit the [Knotie-AI D
 Watch the Knotie-AI demo video to see it in action:
 
 <p align="center">
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/CVsPD0sPMtM" 
-    title="Knotie-AI Demo Video" frameborder="0" 
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
-    </iframe>
+    <a href="https://www.youtube.com/watch?v=CVsPD0sPMtM">
+        <img src="https://img.youtube.com/vi/CVsPD0sPMtM/0.jpg" alt="Knotie-AI Demo Video" width="560" height="315">
+    </a>
 </p>
 
 <p align="center">
@@ -53,6 +52,7 @@ Watch the Knotie-AI demo video to see it in action:
         <img src="https://img.shields.io/badge/Subscribe-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Subscribe">
     </a>
 </p>
+
 
 ---
 
