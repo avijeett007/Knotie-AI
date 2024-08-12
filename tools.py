@@ -1,3 +1,4 @@
+# This file is not maintained anymore. New way to adding custom tool is added now !!
 import requests
 from langchain.tools import tool, BaseTool, StructuredTool
 from pydantic import BaseModel

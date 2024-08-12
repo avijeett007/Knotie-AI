@@ -13,10 +13,16 @@ from prompts import AGENT_STARTING_PROMPT_TEMPLATE, STAGE_TOOL_ANALYZER_PROMPT, 
     AGENT_PROMPT_INBOUND_TEMPLATE
 from flask import session  # Uncomment it after testing.
 from stages import OUTBOUND_CONVERSATION_STAGES, INBOUND_CONVERSATION_STAGES
-from tools import tools_info, OnsiteAppointmentTool, FetchProductPriceTool, CalendlyMeetingTool, \
-    AppointmentAvailabilityTool
 import logging
+import sqlite3
+from openapi_spec_validator import validate_spec
+import yaml
+import importlib
+import requests
+import sys
+import os
 
+sys.path.append(os.path.join(os.path.dirname(__file__), 'generated_tools'))
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -34,13 +40,7 @@ llm_model = Config.LLM_MODEL
 # In-memory storage for testing
 conversation_states = {}
 ai = None
-
-# Instantiate the tools if using BaseTool classes
-if Config.USE_LANGCHAIN_TOOL_CLASS:
-    OnsiteAppointmentTool = OnsiteAppointmentTool()
-    FetchProductPriceTool = FetchProductPriceTool()
-    CalendlyMeetingTool = CalendlyMeetingTool()
-    AppointmentAvailabilityTool = AppointmentAvailabilityTool()
+GENERATED_TOOLS_DIR = 'generated_tools/'
 
 if which_model == "GROQ":
     params = {
@@ -62,6 +62,35 @@ elif which_model == "Anthropic":
         "temperature": 0.5,
         "max_tokens": 100,
     }
+
+
+def fetch_tools_from_db():
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT name, description, class_name, openapi_spec FROM tools')
+    tools = cursor.fetchall()
+    conn.close()
+    return [{"name": row[0], "description": row[1], "class_name": row[2], "openapi_spec": row[3]} for row in tools]
+
+# Initialize tools dynamically
+initialized_tools = {}
+
+def initialize_tools():
+    tools_from_db = fetch_tools_from_db()
+
+    for tool in tools_from_db:
+        tool_name = tool["name"]
+        module_name = f'{tool_name}.client'
+        try:
+            # Add tool's directory to sys.path
+            sys.path.append(os.path.join(GENERATED_TOOLS_DIR, tool_name))
+            module = importlib.import_module(module_name)
+            ToolClass = getattr(module, 'Client')  # Assuming the generated class is named 'Client'
+            initialized_tools[tool["name"]] = ToolClass()
+        except ModuleNotFoundError as e:
+            logger.error(f"Error initializing tool {tool_name}: {e}")
+        except AttributeError as e:
+            logger.error(f"Error finding class in module {tool_name}: {e}")
 
 
 # Method added to reinitialize on updating from UI
@@ -92,6 +121,90 @@ def reinitialize_ai_clients():
             "temperature": 0.5,
             "max_tokens": 100,
         }
+
+def get_tool_and_spec(tool_name):
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT name, description, class_name, openapi_spec FROM tools WHERE name = ?', (tool_name,))
+    tool = cursor.fetchone()
+    conn.close()
+    
+    if tool:
+        return {
+            "name": tool[0],
+            "description": tool[1],
+            "class_name": tool[2],
+            "openapi_spec": tool[3]
+        }
+    else:
+        raise ValueError(f"Tool with name {tool_name} not found")
+
+
+def get_api_info_from_openapi(openapi_spec, operation_id):
+    spec = yaml.safe_load(openapi_spec)
+
+    for path, path_item in spec['paths'].items():
+        for operation, operation_item in path_item.items():
+            if 'operationId' in operation_item and operation_item['operationId'] == operation_id:
+                method = operation.upper()
+                url = spec['servers'][0]['url'] + path
+                parameters = operation_item.get('parameters', [])
+                return method, url, parameters
+
+    raise ValueError(f"Operation ID {operation_id} not found in OpenAPI spec")
+
+
+def call_api(tool_name, tool_params):
+    logger.info(f"Calling tool: {tool_name}")
+    print(f"Calling tool: {tool_name}")
+
+    # Step 1: Get the tool and its OpenAPI spec
+    tool_info = get_tool_and_spec(tool_name)
+    openapi_spec = tool_info['openapi_spec']
+    
+    # Step 2: Extract the relevant API information
+    operation_id = tool_info['class_name']  # Assuming the operationId matches the class name
+    method, url, parameters = get_api_info_from_openapi(openapi_spec, operation_id)
+    
+    # Step 3: Prepare the request payload
+    payload = {}
+    for param in parameters:
+        param_name = param['name']
+        if param_name in tool_params:
+            payload[param_name] = tool_params[param_name]
+    
+    # Step 4: Send the API request
+    if method == 'GET':
+        response = requests.get(url, params=payload)
+    elif method == 'POST':
+        response = requests.post(url, json=payload)
+    # Add other HTTP methods as needed
+    
+    # Step 5: Handle the response
+    if response.status_code == 200:
+        return response.json()  # Assuming the response is in JSON format
+    else:
+        return {"error": f"API call failed with status code {response.status_code}"}
+
+
+def extract_parameters_from_openapi(openapi_spec):
+    logger.info(f"Extracting Function Parameters")
+    parameters = {}
+    # Load and parse the OpenAPI specification
+    spec = yaml.safe_load(openapi_spec)
+    
+    # Assuming you're dealing with a single path and operation:
+    for path, path_item in spec['paths'].items():
+        for operation, operation_item in path_item.items():
+            if 'parameters' in operation_item:
+                for param in operation_item['parameters']:
+                    param_name = param['name']
+                    param_schema = param['schema']
+                    if 'enum' in param_schema:
+                        parameters[param_name] = param_schema['enum']
+                    else:
+                        parameters[param_name] = param_schema['type']
+    return parameters
 
 reinitialize_ai_clients()
 
@@ -185,14 +298,23 @@ def process_initial_message(call_sid, customer_name, customer_problem):
     response = gen_ai_output(message_to_send_to_ai, isToolResponse)
     return response
 
-
 def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_id):
-    tools_description = "\n".join([
-        f"{tool['name']}: {tool['description']}" +
-        (
-            f" (Parameters: {', '.join([f'{k} - possible values: {v}' if isinstance(v, list) else f'{k} - format: {v}' for k, v in tool.get('parameters', {}).items()])})" if 'parameters' in tool else "")
-        for tool in tools_info.values()
-    ])
+    tools_from_db = fetch_tools_from_db()
+    tools_description = ""
+
+    for tool in tools_from_db:
+        tool_description = f"{tool['name']}: {tool['description']}"
+        parameters = extract_parameters_from_openapi(tool['openapi_spec'])
+        
+        if parameters:
+            params_description = f" (Parameters: {', '.join([f'{k} - possible values: {v}' if isinstance(v, list) else f'{k} - type: {v}' for k, v in parameters.items()])})"
+            tool_description += params_description
+
+        tools_description += tool_description + "\n"
+
+    # Add dynamically loaded tools to the description
+    for tool_name, tool_obj in initialized_tools.items():
+        tools_description += f"\n{tool_name}: {tool_obj.description}"
 
     intent_tool_prompt = STAGE_TOOL_ANALYZER_PROMPT.format(
         salesperson_name=salesperson_name,
@@ -206,6 +328,7 @@ def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_i
         user_input=user_input,
         tools=tools_description
     )
+    
     message_to_send_to_ai = [
         {
             "role": "system",
@@ -219,6 +342,7 @@ def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_i
     return ai_output
 
 
+
 def initiate_inbound_message(call_sid):
     initial_response = AGENT_PROMPT_INBOUND_TEMPLATE.format(
         salesperson_name=salesperson_name,
@@ -230,12 +354,7 @@ def initiate_inbound_message(call_sid):
     return initial_response
 
 
-
 def process_message(call_sid, message_history, user_input):
-    # if 'message_history' not in session:
-    #     session['message_history'] = []
-    # print("AI Tool and Conversation stage is decided: ", ai_output)
-    """Process the AI decision to either call a tool or handle conversation stages."""
     conversation_state = conversation_states.get(call_sid)
     conversation_stage_id = conversation_state['conversation_stage_id']
     if not conversation_state:
@@ -252,26 +371,16 @@ def process_message(call_sid, message_history, user_input):
             print('Tool Required is true')
             tool_name, params = get_tool_details(stage_tool_output)
             print('Tool called' + tool_name + 'tool param is: ' + params)
-            if tool_name == "MeetingScheduler":
-                tool_output = CalendlyMeetingTool._run() if Config.USE_LANGCHAIN_TOOL_CLASS else CalendlyMeetingTool()  # Assuming no parameters needed
+            
+            # Use the dynamically loaded tool if available
+            if tool_name in initialized_tools:
+                api_response = call_api(tool_name, params)
+                tool_output = f"Tool {tool_name} executed successfully. Response: {api_response}"
                 message_history.append({"role": "api_response", "content": tool_output})
-            elif tool_name == "OnsiteAppointment":
-                tool_output = OnsiteAppointmentTool._run() if Config.USE_LANGCHAIN_TOOL_CLASS else OnsiteAppointmentTool()  # Assuming no parameters needed
-                message_history.append({"role": "api_response", "content": tool_output})
-            elif tool_name == "GymAppointmentAvailability":
-                tool_output = AppointmentAvailabilityTool._run() if Config.USE_LANGCHAIN_TOOL_CLASS else AppointmentAvailabilityTool()  # Assuming no parameters needed
-                message_history.append({"role": "api_response", "content": tool_output})
-            elif tool_name == "PriceInquiry":
-                # Ensure params is a dictionary and contains 'product_name'
-                tool_output = FetchProductPriceTool._run(
-                    params) if Config.USE_LANGCHAIN_TOOL_CLASS else FetchProductPriceTool()
-                message_history.append({"role": "api_response", "content": tool_output})
-            else:
-                return ""
+
     except ValueError as e:
         tool_output = "Some Error Occured In calling the tools. Ask User if its okay that you callback the user later with answer of the query."
 
-    # conversation_stage_id = session.get('conversation_stage_id', 1)
     print("Creating inbound prompt template")
     inbound_prompt = AGENT_PROMPT_OUTBOUND_TEMPLATE.format(
         salesperson_name=salesperson_name,
@@ -294,8 +403,6 @@ def process_message(call_sid, message_history, user_input):
             "content": user_input
         }
     ]
-    # session['message_history'].append({"role": "user", "content": user_input})
-    print("Calling With inbound template: ", json.dumps(message_history))
     isToolResponse = "no"
     # Check if caching is enabled
     if Config.CACHE_ENABLED == 'true':
@@ -305,6 +412,6 @@ def process_message(call_sid, message_history, user_input):
             talkback_response = gen_ai_output(message_to_send_to_ai_final, isToolResponse)
             conversation_cache.put(user_input, talkback_response)
             return talkback_response
-    else:    
+    else:
         talkback_response = gen_ai_output(message_to_send_to_ai_final, isToolResponse)
         return talkback_response

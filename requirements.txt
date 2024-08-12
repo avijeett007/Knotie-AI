@@ -12,3 +12,6 @@ anthropic>=0.25.7
 elevenlabs
 pydantic
 flask-cors
+openapi-spec-validator
+openapi-python-client
+PyYAML

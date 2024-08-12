@@ -59,6 +59,9 @@
                     <li class="nav-item">
                         <a class="nav-link" id="chats-tab" data-toggle="tab" href="#chats-section" role="tab" aria-controls="chats" aria-selected="false">Chats</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tools-tab" data-toggle="tab" href="#tools-section" role="tab" aria-controls="tools" aria-selected="false">Custom Tools</a>
+                    </li>
                     <li class="logout-btn">
                         <button class="btn btn-danger" onclick="logout()">Logout</button>
                     </li>
@@ -101,6 +104,19 @@
                         <div id="chats-list"></div>
                         <div id="chat-details" class="mt-4"></div>
                     </div>
+
+                    <div class="tab-pane fade" id="tools-section" role="tabpanel" aria-labelledby="tools-tab">
+                        <h3>Custom Tools</h3>
+                        <div id="tools-list">
+                            <!-- Existing tools will be displayed here -->
+                        </div>
+                        <button class="btn btn-success mb-3" onclick="addTool()">Add Tool</button>
+                        <form id="tools-form" enctype="multipart/form-data">
+                            <!-- Dynamic tool fields will be appended here -->
+                        </form>
+                        <button class="btn btn-primary mt-3" onclick="submitTools()">Submit Tools</button>
+                        <div id="tools-message" class="mt-3"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -123,6 +139,11 @@
             // Load chats when Chats tab is shown
             $('#adminTab a[href="#chats-section"]').on('shown.bs.tab', function () {
                 loadChats();
+            });
+
+            // Load tools when Custom Tools tab is shown
+            $('#adminTab a[href="#tools-section"]').on('shown.bs.tab', function () {
+                loadTools();
             });
         });
 
@@ -175,20 +196,92 @@
             chats.forEach(chat => {
                 const chatItem = document.createElement('div');
                 chatItem.className = 'chat-item';
-                chatItem.textContent = `Transaction ID: ${chat.transaction_id}`;
-                chatItem.onclick = () => loadChatDetails(chat.transaction_id);
+                chatItem.textContent = `Transaction ID: ${chat}`;
+                chatItem.onclick = () => loadChatDetails(chat);
                 chatsList.appendChild(chatItem);
             });
         }
 
         async function loadChatDetails(transactionId) {
-            const response = await fetch(`/api/chats/${transactionId}`);
+            const response = await fetch(`/api/chat/${transactionId}`);
             const chatDetails = await response.json();
             const chatDetailsDiv = document.getElementById('chat-details');
             chatDetailsDiv.innerHTML = `
                 <h4>Chat Details for Transaction ID: ${transactionId}</h4>
                 <pre>${JSON.stringify(chatDetails, null, 2)}</pre>
             `;
+        }
+
+        async function loadTools() {
+            const response = await fetch('/api/tools');
+            const tools = await response.json();
+            const toolsList = document.getElementById('tools-list');
+            toolsList.innerHTML = '';
+
+            if (tools.length === 0) {
+                toolsList.innerHTML = '<p>No tools added yet.</p>';
+            } else {
+                tools.forEach(tool => {
+                    const toolItem = document.createElement('div');
+                    toolItem.className = 'tool-item mb-4';
+                    toolItem.innerHTML = `
+                        <h5>${tool.name}</h5>
+                        <p>${tool.description}</p>
+                        <p><strong>OpenAPI Spec:</strong> ${tool.openapi_spec}</p>
+                        <hr>
+                    `;
+                    toolsList.appendChild(toolItem);
+                });
+            }
+        }
+
+        let toolCount = 0;
+
+        function addTool() {
+            toolCount++;
+            const toolForm = document.createElement('div');
+            toolForm.className = 'mb-4';
+            toolForm.innerHTML = `
+                <div class="form-group">
+                    <label for="toolName${toolCount}">Tool Name</label>
+                    <input type="text" class="form-control" id="toolName${toolCount}" placeholder="Enter tool name" required>
+                </div>
+                <div class="form-group">
+                    <label for="toolDescription${toolCount}">Tool Description</label>
+                    <textarea class="form-control" id="toolDescription${toolCount}" rows="3" placeholder="Enter tool description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="toolFile${toolCount}">OpenAPI Specification File</label>
+                    <input type="file" class="form-control-file" id="toolFile${toolCount}" required>
+                </div>
+                <hr>
+            `;
+            document.getElementById('tools-form').appendChild(toolForm);
+        }
+
+        async function submitTools() {
+            const formData = new FormData();
+            for (let i = 1; i <= toolCount; i++) {
+                const toolName = document.getElementById(`toolName${i}`).value;
+                const toolDescription = document.getElementById(`toolDescription${i}`).value;
+                const toolFile = document.getElementById(`toolFile${i}`).files[0];
+                if (toolName && toolDescription && toolFile) {
+                    formData.append(`toolName${i}`, toolName);
+                    formData.append(`toolDescription${i}`, toolDescription);
+                    formData.append(`toolFile${i}`, toolFile);
+                }
+            }
+
+            const response = await fetch('/api/tools', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            document.getElementById('tools-message').textContent = result.message;
+
+            // Reload the tools list after adding new tools
+            loadTools();
         }
 
         function logout() {

@@ -9,7 +9,7 @@ import os
 import subprocess
 import requests
 from audio_helpers import text_to_speech, text_to_speech_stream, save_audio_file, initialize_elevenlabs_client
-from ai_helpers import process_initial_message, process_message, initiate_inbound_message, reinitialize_ai_clients
+from ai_helpers import process_initial_message, process_message, initiate_inbound_message, reinitialize_ai_clients, initialize_tools
 from appUtils import clean_response, delayed_delete, save_message_history, get_message_history, process_elevenlabs_audio
 from config import Config
 import logging
@@ -20,10 +20,14 @@ import json
 from urllib.parse import quote_plus
 import uuid
 import sqlite3
+import importlib
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+OPENAPI_DIR = 'openapi_specs/'
+# Define the directory for storing generated tools
+GENERATED_TOOLS_DIR = 'generated_tools/'
 
 app = Flask(__name__)
 CORS(app)
@@ -41,6 +45,7 @@ redis_client = redis.Redis(host='redis', port=6379, db=0, decode_responses=True)
 
 # Path to the configuration file
 config_path = 'config.json'
+
 
 # Load configuration from JSON file
 def load_config():
@@ -62,6 +67,15 @@ def init_sqlite_db():
                         username TEXT UNIQUE NOT NULL,
                         password TEXT NOT NULL,
                         first_login INTEGER DEFAULT 1)''')
+    
+    # New table for storing tools
+    cursor.execute('''CREATE TABLE IF NOT EXISTS tools (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT UNIQUE NOT NULL,
+                        description TEXT NOT NULL,
+                        openapi_spec TEXT NOT NULL,
+                        class_name TEXT NOT NULL)''')
+    
     conn.commit()
     
     # Check if admin user exists, if not, create one
@@ -82,6 +96,33 @@ def init_sqlite_db():
 
 init_sqlite_db()
 
+def generate_tool_client(tool_name, tool_file_path):
+    # Create a unique directory for each tool
+    tool_output_dir = os.path.join(GENERATED_TOOLS_DIR, tool_name)
+    
+    # Check if the directory already exists and delete it if needed
+    if os.path.exists(tool_output_dir):
+        logger.info(f"Directory {tool_output_dir} exists. Overwriting.")
+        os.system(f'rm -rf {tool_output_dir}')
+    
+    # Generate the client using the OpenAPI spec
+    os.system(f'openapi-python-client generate --path {tool_file_path} --output-path {tool_output_dir}')
+
+def add_tool_to_db(tool_name, tool_description, tool_file):
+    # Generate client for the tool
+    generate_tool_client(tool_name, tool_file)
+
+    # Insert tool data into the database
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO tools (name, description, openapi_spec, class_name) VALUES (?, ?, ?, ?)',
+                   (tool_name, tool_description, tool_file, f'{tool_name}.Client'))
+    conn.commit()
+    conn.close()
+
+    # Initialize the tool after adding it
+    initialize_tools()
+
 # Twilio client initialization
 client = None
 
@@ -94,13 +135,67 @@ def initialize_twilio_client():
 # Initialize the clients at the start
 initialize_twilio_client()
 initialize_elevenlabs_client()
-reinitialize_ai_clients()
+
+# Remove automatic AI client and tool initialization
+# reinitialize_ai_clients()
+# initialize_tools()
+
+
+@app.route('/api/tools', methods=['GET'])
+def get_tools():
+    if 'logged_in' not in session:
+        return jsonify({"error": "Not logged in"}), 403
+
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, name, description, openapi_spec FROM tools')
+    tools = cursor.fetchall()
+    conn.close()
+
+    tools_list = []
+    for tool in tools:
+        tools_list.append({
+            "id": tool[0],
+            "name": tool[1],
+            "description": tool[2],
+            "openapi_spec": tool[3]
+        })
+
+    return jsonify(tools_list)
 
 
 # Route to serve the HTML template
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/tools', methods=['POST'])
+def add_tool():
+    if 'logged_in' not in session:
+        return jsonify({"error": "Not logged in"}), 403
+
+    # Create the directory if it doesn't exist
+    os.makedirs(GENERATED_TOOLS_DIR, exist_ok=True)
+
+    tool_count = 0
+    for key in request.form:
+        if key.startswith('toolName'):
+            tool_count += 1
+
+    for i in range(1, tool_count + 1):
+        tool_name = request.form[f'toolName{i}'].strip().replace(" ", "")
+        tool_description = request.form[f'toolDescription{i}']
+        tool_file = request.files[f'toolFile{i}']
+
+        # Save the OpenAPI spec file
+        filename = secure_filename(tool_file.filename)
+        tool_file_path = os.path.join(OPENAPI_DIR, filename)
+        tool_file.save(tool_file_path)
+
+        # Add tool to database and generate client
+        add_tool_to_db(tool_name, tool_description, tool_file_path)
+
+    return jsonify({"message": "Tools added successfully"}), 200
 
 # API endpoint for login
 @app.route('/login', methods=['POST'])
