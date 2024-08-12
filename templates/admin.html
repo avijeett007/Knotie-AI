@@ -6,80 +6,130 @@
     <title>Admin - Knotie-AI</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .container { max-width: 800px; margin-top: 50px; }
-        .config-section, .chats-section, .form-section { display: none; }
+        .container { max-width: 1200px; margin-top: 50px; }
+        .nav-tabs { border-right: 1px solid #ddd; padding-right: 10px; }
+        .nav-tabs .nav-item { margin-bottom: 10px; }
+        .nav-tabs .nav-link { 
+            text-align: left; 
+            background-color: #f8f9fa; 
+            border-radius: 0; 
+            border: 1px solid transparent;
+            padding: 10px 15px;
+        }
+        .nav-tabs .nav-link.active {
+            background-color: #007bff; 
+            color: white; 
+            border-color: #007bff;
+        }
+        .tab-content {
+            background-color: #ffffff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .tab-pane { 
+            padding-left: 10px; 
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .logout-btn {
+            margin-top: auto;
+            margin-left: 10px;
+            display: flex;
+            justify-content: flex-end;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Welcome to Knotie-AI Admin</h1>
         <p class="lead">Manage your settings and view interactions</p>
-        <button class="btn btn-secondary" onclick="showSection('config')">Settings</button>
-        <button class="btn btn-secondary" onclick="showSection('chats')">Chats</button>
-        <button class="btn btn-secondary" onclick="showSection('form')">Admin Form</button>
-        <button class="btn btn-danger float-right" onclick="logout()">Logout</button>
 
-        <div class="config-section mt-4">
-            <h3>Configuration</h3>
-            <div id="config-form"></div>
-            <button class="btn btn-primary" onclick="updateConfig()">Update Config</button>
-            <div id="config-message" class="mt-3"></div>
-        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <ul class="nav nav-tabs flex-column" id="adminTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="form-tab" data-toggle="tab" href="#form-section" role="tab" aria-controls="form" aria-selected="true">Admin Form</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="config-tab" data-toggle="tab" href="#config-section" role="tab" aria-controls="config" aria-selected="false">Settings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="chats-tab" data-toggle="tab" href="#chats-section" role="tab" aria-controls="chats" aria-selected="false">Chats</a>
+                    </li>
+                    <li class="logout-btn">
+                        <button class="btn btn-danger" onclick="logout()">Logout</button>
+                    </li>
+                </ul>
+            </div>
 
-        <div class="chats-section mt-4">
-            <h3>Chats</h3>
-            <div id="chats-list"></div>
-            <div id="chat-details" class="mt-4"></div>
-        </div>
+            <div class="col-md-9">
+                <div class="tab-content" id="adminTabContent">
+                    <div class="tab-pane fade show active" id="form-section" role="tabpanel" aria-labelledby="form-tab">
+                        <h3>Knotie AI Admin Form</h3>
+                        <iframe
+                            src="https://api.leadconnectorhq.com/widget/form/j9kpCI8SwmuwarKDR97d"
+                            style="width:100%;height:646px;border:none;border-radius:3px"
+                            id="inline-j9kpCI8SwmuwarKDR97d" 
+                            data-layout="{'id':'INLINE'}"
+                            data-trigger-type="alwaysShow"
+                            data-trigger-value=""
+                            data-activation-type="alwaysActivated"
+                            data-activation-value=""
+                            data-deactivation-type="neverDeactivate"
+                            data-deactivation-value=""
+                            data-form-name="Knotie AI Admin Form"
+                            data-height="646"
+                            data-layout-iframe-id="inline-j9kpCI8SwmuwarKDR97d"
+                            data-form-id="j9kpCI8SwmuwarKDR97d"
+                            title="Knotie AI Admin Form">
+                        </iframe>
+                        <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                    </div>
 
-        <div class="form-section mt-4">
-            <h3>Knotie AI Admin Form</h3>
-            <iframe
-                src="https://api.leadconnectorhq.com/widget/form/j9kpCI8SwmuwarKDR97d"
-                style="width:100%;height:646px;border:none;border-radius:3px"
-                id="inline-j9kpCI8SwmuwarKDR97d" 
-                data-layout="{'id':'INLINE'}"
-                data-trigger-type="alwaysShow"
-                data-trigger-value=""
-                data-activation-type="alwaysActivated"
-                data-activation-value=""
-                data-deactivation-type="neverDeactivate"
-                data-deactivation-value=""
-                data-form-name="Knotie AI Admin Form"
-                data-height="646"
-                data-layout-iframe-id="inline-j9kpCI8SwmuwarKDR97d"
-                data-form-id="j9kpCI8SwmuwarKDR97d"
-                title="Knotie AI Admin Form">
-            </iframe>
-            <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                    <div class="tab-pane fade" id="config-section" role="tabpanel" aria-labelledby="config-tab">
+                        <h3>Configuration</h3>
+                        <div id="config-form"></div>
+                        <button class="btn btn-primary mt-3" onclick="updateConfig()">Update Config</button>
+                        <div id="config-message" class="mt-3"></div>
+                    </div>
+
+                    <div class="tab-pane fade" id="chats-section" role="tabpanel" aria-labelledby="chats-tab">
+                        <h3>Chats</h3>
+                        <div id="chats-list"></div>
+                        <div id="chat-details" class="mt-4"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // Check if the user has already filled out the form
             const formFilled = getCookie('formFilled');
             if (formFilled) {
-                showSection('config');
+                showSection('form');
             } else {
                 showSection('form');
             }
+
+            // Load config when Settings tab is shown
+            $('#adminTab a[href="#config-section"]').on('shown.bs.tab', function () {
+                loadConfig();
+            });
+
+            // Load chats when Chats tab is shown
+            $('#adminTab a[href="#chats-section"]').on('shown.bs.tab', function () {
+                loadChats();
+            });
         });
 
         function showSection(section) {
-            document.querySelector('.config-section').style.display = 'none';
-            document.querySelector('.chats-section').style.display = 'none';
-            document.querySelector('.form-section').style.display = 'none';
-
-            if (section === 'config') {
-                document.querySelector('.config-section').style.display = 'block';
-                loadConfig();
-            } else if (section === 'chats') {
-                document.querySelector('.chats-section').style.display = 'block';
-                loadChats();
-            } else if (section === 'form') {
-                document.querySelector('.form-section').style.display = 'block';
-            }
+            const tab = document.querySelector(`#${section}-tab`);
+            const tabContent = new bootstrap.Tab(tab);
+            tabContent.show();
         }
 
         async function loadConfig() {
@@ -118,8 +168,7 @@
         }
 
         async function loadChats() {
-            // Fetch chats from the backend
-            const response = await fetch('/api/chats'); // Create an endpoint to fetch chat list
+            const response = await fetch('/api/chats');
             const chats = await response.json();
             const chatsList = document.getElementById('chats-list');
             chatsList.innerHTML = '';
@@ -133,7 +182,7 @@
         }
 
         async function loadChatDetails(transactionId) {
-            const response = await fetch(`/api/chats/${transactionId}`); // Create an endpoint to fetch chat details
+            const response = await fetch(`/api/chats/${transactionId}`);
             const chatDetails = await response.json();
             const chatDetailsDiv = document.getElementById('chat-details');
             chatDetailsDiv.innerHTML = `
@@ -147,7 +196,6 @@
                 .then(() => window.location.href = '/');
         }
 
-        // Utility functions for cookie management
         function setCookie(name, value, days) {
             const d = new Date();
             d.setTime(d.getTime() + (days*24*60*60*1000));
@@ -172,15 +220,17 @@
         }
 
         function formSubmitted() {
-            setCookie('formFilled', 'true', 365);  // Save a cookie for 1 year
-            showSection('config');  // Show the settings section after form is filled
+            setCookie('formFilled', 'true', 365);
+            showSection('config');
         }
 
-        // Bind the form submission to formSubmitted function
         document.getElementById('inline-j9kpCI8SwmuwarKDR97d').onload = function() {
             const formIframe = document.getElementById('inline-j9kpCI8SwmuwarKDR97d');
             formIframe.contentWindow.addEventListener('submit', formSubmitted);
         }
     </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
