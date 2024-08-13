@@ -13,10 +13,25 @@ from prompts import AGENT_STARTING_PROMPT_TEMPLATE, STAGE_TOOL_ANALYZER_PROMPT, 
     AGENT_PROMPT_INBOUND_TEMPLATE
 from flask import session  # Uncomment it after testing.
 from stages import OUTBOUND_CONVERSATION_STAGES, INBOUND_CONVERSATION_STAGES
-from tools import tools_info, OnsiteAppointmentTool, FetchProductPriceTool, CalendlyMeetingTool, \
-    AppointmentAvailabilityTool
 import logging
+import sqlite3
+from openapi_spec_validator import validate_spec
+import yaml
+import importlib
+import requests
+import sys
+import os
+# Import tool-related functions
+from tools_helper import (
+    initialize_tools, 
+    get_tool_and_spec, 
+    call_api, 
+    replace_sensitive_values,
+    fetch_tools_from_db,
+    initialized_tools
+)
 
+sys.path.append(os.path.join(os.path.dirname(__file__), 'generated_tools'))
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -34,13 +49,7 @@ llm_model = Config.LLM_MODEL
 # In-memory storage for testing
 conversation_states = {}
 ai = None
-
-# Instantiate the tools if using BaseTool classes
-if Config.USE_LANGCHAIN_TOOL_CLASS:
-    OnsiteAppointmentTool = OnsiteAppointmentTool()
-    FetchProductPriceTool = FetchProductPriceTool()
-    CalendlyMeetingTool = CalendlyMeetingTool()
-    AppointmentAvailabilityTool = AppointmentAvailabilityTool()
+GENERATED_TOOLS_DIR = 'generated_tools/'
 
 if which_model == "GROQ":
     params = {
@@ -62,6 +71,10 @@ elif which_model == "Anthropic":
         "temperature": 0.5,
         "max_tokens": 100,
     }
+
+
+# Example usage:
+initialize_tools()
 
 
 # Method added to reinitialize on updating from UI
@@ -148,14 +161,17 @@ def get_conversation_stage(ai_output):
 
 
 def get_tool_details(ai_output):
-    """Retrieve the tool name and parameters if a tool is required."""
+    """Retrieve the tool name, operationId, and parameters if a tool is required."""
     if not is_tool_required(ai_output):
-        return None, None
+        return None, None, None
     try:
         data = json.loads(ai_output)
         tool_name = data.get("tool_name")
+        operation_id = data.get("operation_id")
         tool_parameters = data.get("tool_parameters")
-        return tool_name, tool_parameters
+        tool_body_parameters = data.get("tool_body_parameters")
+        tool_headers = data.get("tool_headers")
+        return tool_name, operation_id, tool_parameters, tool_headers, tool_body_parameters
     except json.JSONDecodeError:
         raise ValueError("Invalid JSON format in AI output.")
 
@@ -185,14 +201,126 @@ def process_initial_message(call_sid, customer_name, customer_problem):
     response = gen_ai_output(message_to_send_to_ai, isToolResponse)
     return response
 
+# def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_id):
+#     tools_from_db = fetch_tools_from_db()
+#     tools_description = ""
+
+#     for tool in tools_from_db:
+#         tool_name = tool['name']
+#         tool_description = f"{tool_name}: {tool['description']}\nAvailable Operations:\n"
+        
+#         # Extracting operations and their details
+#         operation_ids = initialized_tools[tool_name]['operations']
+
+#         for operation_id, operation_details in operation_ids.items():
+#             tool_description += f"  - {operation_id}: {operation_details['method']} {operation_details['url']}\n"
+            
+#             # Adding headers, query parameters, and path parameters
+#             headers_description = ', '.join([f"{header}: {details}" for header, details in operation_details['parameters'].get('header', {}).items()])
+#             query_description = ', '.join([f"{param}: {details}" for param, details in operation_details['parameters'].get('query', {}).items()])
+#             path_description = ', '.join([f"{param}: {details}" for param, details in operation_details['parameters'].get('path', {}).items()])
+#             body_description = ', '.join([f"{param}: {details}" for param, details in operation_details['parameters'].get('body', {}).items()])
+
+#             if headers_description:
+#                 tool_description += f"    Headers: {headers_description}\n"
+#             if query_description:
+#                 tool_description += f"    Query Parameters: {query_description}\n"
+#             if path_description:
+#                 tool_description += f"    Path Parameters: {path_description}\n"
+#             if body_description:
+#                 tool_description += f"    Body Parameters: {body_description}\n"
+
+#         tools_description += tool_description + "\n"
+#     print("tool description is:" + tools_description)
+#     intent_tool_prompt = STAGE_TOOL_ANALYZER_PROMPT.format(
+#         salesperson_name=salesperson_name,
+#         company_name=company_name,
+#         company_business=company_business,
+#         conversation_purpose=conversation_purpose,
+#         conversation_stage_id=conversation_stage_id,
+#         conversation_stages=conversation_stages,
+#         conversation_history=message_history,
+#         company_products_services=company_products_services,
+#         user_input=user_input,
+#         tools=tools_description
+#     )
+
+#     print("Prompt being sent to AI:" + intent_tool_prompt)
+    
+#     message_to_send_to_ai = [
+#         {
+#             "role": "system",
+#             "content": intent_tool_prompt
+#         }
+#     ]
+#     message_to_send_to_ai.append(
+#         {"role": "user", "content": "You Must Respond in the JSON format specified in the system prompt"})
+#     isToolResponse = "yes"
+#     ai_output = gen_ai_output(message_to_send_to_ai, isToolResponse)
+#     print("AI Tool Model Output:" + ai_output)
+#     return ai_output
 
 def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_id):
-    tools_description = "\n".join([
-        f"{tool['name']}: {tool['description']}" +
-        (
-            f" (Parameters: {', '.join([f'{k} - possible values: {v}' if isinstance(v, list) else f'{k} - format: {v}' for k, v in tool.get('parameters', {}).items()])})" if 'parameters' in tool else "")
-        for tool in tools_info.values()
-    ])
+    tools_from_db = fetch_tools_from_db()
+    tools_description = ""
+
+    for tool in tools_from_db:
+        tool_name = tool['name']
+        tool_description = f"{tool_name}: {tool['description']}\nAvailable Operations:\n"
+        
+        operation_ids = initialized_tools[tool_name]['operations']
+
+        for operation_id, operation_details in operation_ids.items():
+            tool_description += f"  - {operation_id}: {operation_details['method']} {operation_details['url']}\n"
+
+            tool_info = get_tool_and_spec(tool_name)
+            sensitive_headers = json.loads(tool_info.get('sensitive_headers', '{}') or '{}')
+            sensitive_body = json.loads(tool_info.get('sensitive_body', '{}') or '{}')
+
+            # Headers
+            headers_description = ', '.join([
+                f"{header}: {details['type']}" +
+                (f" (enum: {details['enum']})" if details['enum'] else "") +
+                (" (sensitive)" if header in sensitive_headers else "") +
+                (" (mandatory)" if details.get('required') else "")
+                for header, details in operation_details['parameters'].get('header', {}).items()
+            ])
+
+            # Query Parameters
+            query_description = ', '.join([
+                f"{param}: {details['type']}" +
+                (f" (enum: {details['enum']})" if details['enum'] else "") +
+                (" (mandatory)" if details.get('required') else "")
+                for param, details in operation_details['parameters'].get('query', {}).items()
+            ])
+
+            # Path Parameters
+            path_description = ', '.join([
+                f"{param}: {details['type']}" +
+                (f" (enum: {details['enum']})" if details['enum'] else "") +
+                (" (mandatory)" if details.get('required') else "")
+                for param, details in operation_details['parameters'].get('path', {}).items()
+            ])
+
+            # Body Parameters
+            body_description = ', '.join([
+                f"{param}: {details['type']}" +
+                (f" (enum: {details['enum']})" if details['enum'] else "") +
+                (" (sensitive)" if param in sensitive_body else "") +
+                (" (mandatory)" if details.get('required') else "")
+                for param, details in operation_details['parameters'].get('body', {}).items()
+            ])
+
+            if headers_description:
+                tool_description += f"    Headers: {headers_description}\n"
+            if query_description:
+                tool_description += f"    Query Parameters: {query_description}\n"
+            if path_description:
+                tool_description += f"    Path Parameters: {path_description}\n"
+            if body_description:
+                tool_description += f"    Body Parameters: {body_description}\n"
+
+        tools_description += tool_description + "\n"
 
     intent_tool_prompt = STAGE_TOOL_ANALYZER_PROMPT.format(
         salesperson_name=salesperson_name,
@@ -206,6 +334,9 @@ def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_i
         user_input=user_input,
         tools=tools_description
     )
+
+    print("Prompt being sent to AI:" + intent_tool_prompt)
+    
     message_to_send_to_ai = [
         {
             "role": "system",
@@ -213,9 +344,10 @@ def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_i
         }
     ]
     message_to_send_to_ai.append(
-        {"role": "user", "content": "You Must Respond in the json format specified in system prompt"})
+        {"role": "user", "content": "You Must Respond in the JSON format specified in the system prompt"})
     isToolResponse = "yes"
     ai_output = gen_ai_output(message_to_send_to_ai, isToolResponse)
+    print("AI Tool Model Output:" + ai_output)
     return ai_output
 
 
@@ -230,12 +362,7 @@ def initiate_inbound_message(call_sid):
     return initial_response
 
 
-
 def process_message(call_sid, message_history, user_input):
-    # if 'message_history' not in session:
-    #     session['message_history'] = []
-    # print("AI Tool and Conversation stage is decided: ", ai_output)
-    """Process the AI decision to either call a tool or handle conversation stages."""
     conversation_state = conversation_states.get(call_sid)
     conversation_stage_id = conversation_state['conversation_stage_id']
     if not conversation_state:
@@ -250,28 +377,18 @@ def process_message(call_sid, message_history, user_input):
     try:
         if is_tool_required(stage_tool_output):
             print('Tool Required is true')
-            tool_name, params = get_tool_details(stage_tool_output)
-            print('Tool called' + tool_name + 'tool param is: ' + params)
-            if tool_name == "MeetingScheduler":
-                tool_output = CalendlyMeetingTool._run() if Config.USE_LANGCHAIN_TOOL_CLASS else CalendlyMeetingTool()  # Assuming no parameters needed
+            tool_name, operation_id, tool_parameters, tool_headers, tool_body_parameters = get_tool_details(stage_tool_output)
+            print(f'Tool called: {tool_name}, Operation: {operation_id}, Params: {tool_parameters}, tool_headers: {tool_headers}, tool_body_parameters: {tool_body_parameters}')
+            
+            # Use the dynamically loaded tool if available
+            if tool_name in initialized_tools:
+                api_response = call_api(tool_name, tool_parameters, operation_id, tool_headers, tool_body_parameters)
+                tool_output = f"Tool {tool_name} executed successfully. Response: {api_response}"
                 message_history.append({"role": "api_response", "content": tool_output})
-            elif tool_name == "OnsiteAppointment":
-                tool_output = OnsiteAppointmentTool._run() if Config.USE_LANGCHAIN_TOOL_CLASS else OnsiteAppointmentTool()  # Assuming no parameters needed
-                message_history.append({"role": "api_response", "content": tool_output})
-            elif tool_name == "GymAppointmentAvailability":
-                tool_output = AppointmentAvailabilityTool._run() if Config.USE_LANGCHAIN_TOOL_CLASS else AppointmentAvailabilityTool()  # Assuming no parameters needed
-                message_history.append({"role": "api_response", "content": tool_output})
-            elif tool_name == "PriceInquiry":
-                # Ensure params is a dictionary and contains 'product_name'
-                tool_output = FetchProductPriceTool._run(
-                    params) if Config.USE_LANGCHAIN_TOOL_CLASS else FetchProductPriceTool()
-                message_history.append({"role": "api_response", "content": tool_output})
-            else:
-                return ""
+
     except ValueError as e:
         tool_output = "Some Error Occured In calling the tools. Ask User if its okay that you callback the user later with answer of the query."
 
-    # conversation_stage_id = session.get('conversation_stage_id', 1)
     print("Creating inbound prompt template")
     inbound_prompt = AGENT_PROMPT_OUTBOUND_TEMPLATE.format(
         salesperson_name=salesperson_name,
@@ -294,8 +411,6 @@ def process_message(call_sid, message_history, user_input):
             "content": user_input
         }
     ]
-    # session['message_history'].append({"role": "user", "content": user_input})
-    print("Calling With inbound template: ", json.dumps(message_history))
     isToolResponse = "no"
     # Check if caching is enabled
     if Config.CACHE_ENABLED == 'true':
@@ -305,6 +420,7 @@ def process_message(call_sid, message_history, user_input):
             talkback_response = gen_ai_output(message_to_send_to_ai_final, isToolResponse)
             conversation_cache.put(user_input, talkback_response)
             return talkback_response
-    else:    
+    else:
         talkback_response = gen_ai_output(message_to_send_to_ai_final, isToolResponse)
         return talkback_response
+

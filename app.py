@@ -6,10 +6,12 @@ from werkzeug.utils import secure_filename
 from langchain_core.prompts import PromptTemplate
 from flask_cors import CORS
 import os
+import shutil
 import subprocess
 import requests
 from audio_helpers import text_to_speech, text_to_speech_stream, save_audio_file, initialize_elevenlabs_client
 from ai_helpers import process_initial_message, process_message, initiate_inbound_message, reinitialize_ai_clients
+from tools_helper import initialize_tools, encrypt_data, decrypt_data
 from appUtils import clean_response, delayed_delete, save_message_history, get_message_history, process_elevenlabs_audio
 from config import Config
 import logging
@@ -20,10 +22,16 @@ import json
 from urllib.parse import quote_plus
 import uuid
 import sqlite3
+import importlib
+import shutil
+import re
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+OPENAPI_DIR = 'openapi_specs/'
+# Define the directory for storing generated tools
+GENERATED_TOOLS_DIR = 'generated_tools/'
 
 app = Flask(__name__)
 CORS(app)
@@ -42,6 +50,7 @@ redis_client = redis.Redis(host='redis', port=6379, db=0, decode_responses=True)
 # Path to the configuration file
 config_path = 'config.json'
 
+
 # Load configuration from JSON file
 def load_config():
     if os.path.exists(config_path):
@@ -53,8 +62,15 @@ def load_config():
 # Global variable to hold the configuration
 config_data = load_config()
 
+def is_valid_tool_name(tool_name):
+    """Validate the tool name to prevent directory traversal or other path manipulation."""
+    # Allow only alphanumeric characters and underscores in the tool name
+    # This prevents directory traversal and other malicious input
+    return re.match(r'^[\w-]+$', tool_name) is not None
+
 # SQLite setup for user management
 def init_sqlite_db():
+    # Initialize user database
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS users (
@@ -62,6 +78,7 @@ def init_sqlite_db():
                         username TEXT UNIQUE NOT NULL,
                         password TEXT NOT NULL,
                         first_login INTEGER DEFAULT 1)''')
+    
     conn.commit()
     
     # Check if admin user exists, if not, create one
@@ -80,8 +97,65 @@ def init_sqlite_db():
     
     conn.close()
 
-init_sqlite_db()
+def init_tool_db():
+    conn = sqlite3.connect('tools.db')
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS tools (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT UNIQUE NOT NULL,
+                        description TEXT NOT NULL,
+                        openapi_spec TEXT NOT NULL,
+                        class_name TEXT NOT NULL,
+                        sensitive_headers TEXT,
+                        sensitive_body TEXT)''')
+    conn.commit()
+    conn.close()
 
+init_sqlite_db()
+init_tool_db()
+
+def generate_tool_client(tool_name, tool_file_path):
+    # Validate the tool name
+    if not is_valid_tool_name(tool_name):
+        raise ValueError(f"Invalid tool name: {tool_name}")
+
+    # Create a unique directory for each tool
+    tool_output_dir = os.path.join(GENERATED_TOOLS_DIR, tool_name)
+    
+    # Check if the directory already exists and delete it if needed
+    # if os.path.exists(tool_output_dir):
+    #     logger.info(f"Directory {tool_output_dir} exists. Overwriting.")
+    #     shutil.rmtree(tool_output_dir)  # Use shutil.rmtree to remove the directory
+    
+    # Generate the client using the OpenAPI spec
+    try:
+        subprocess.run(
+            ['openapi-python-client', 'generate', '--path', tool_file_path, '--output-path', tool_output_dir],
+            check=True
+        )
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to generate client for tool {tool_name}: {e}")
+        raise
+
+def add_tool_to_db(tool_name, tool_description, tool_file, tool_sensitive_headers, tool_sensitive_body):
+    # Generate client for the tool
+    generate_tool_client(tool_name, tool_file)
+
+    # Encrypt sensitive headers and body parameters
+    encrypted_headers = encrypt_data(tool_sensitive_headers) if tool_sensitive_headers else None
+    encrypted_body = encrypt_data(tool_sensitive_body) if tool_sensitive_body else None
+
+    # Insert tool data into the database
+    conn = sqlite3.connect('tools.db')
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO tools (name, description, openapi_spec, class_name, sensitive_headers, sensitive_body) VALUES (?, ?, ?, ?, ?, ?)',
+                   (tool_name, tool_description, tool_file, f'{tool_name}.Client', encrypted_headers, encrypted_body))
+    conn.commit()
+    conn.close()
+
+    # Initialize the tool after adding it
+    initialize_tools()
+    
 # Twilio client initialization
 client = None
 
@@ -94,13 +168,70 @@ def initialize_twilio_client():
 # Initialize the clients at the start
 initialize_twilio_client()
 initialize_elevenlabs_client()
-reinitialize_ai_clients()
+
+# Remove automatic AI client and tool initialization
+# reinitialize_ai_clients()
+# initialize_tools()
+
+
+@app.route('/api/tools', methods=['GET'])
+def get_tools():
+    if 'logged_in' not in session:
+        return jsonify({"error": "Not logged in"}), 403
+
+    conn = sqlite3.connect('tools.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, name, description, openapi_spec FROM tools')
+    tools = cursor.fetchall()
+    conn.close()
+
+    tools_list = []
+    for tool in tools:
+        tools_list.append({
+            "id": tool[0],
+            "name": tool[1],
+            "description": tool[2],
+            "openapi_spec": tool[3]
+        })
+
+    return jsonify(tools_list)
 
 
 # Route to serve the HTML template
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/tools', methods=['POST'])
+def add_tool():
+    if 'logged_in' not in session:
+        return jsonify({"error": "Not logged in"}), 403
+
+    # Create the directory if it doesn't exist
+    os.makedirs(GENERATED_TOOLS_DIR, exist_ok=True)
+
+    tool_count = 0
+    for key in request.form:
+        if key.startswith('toolName'):
+            tool_count += 1
+
+    for i in range(1, tool_count + 1):
+        tool_name = request.form[f'toolName{i}'].strip().replace(" ", "")
+        tool_description = request.form[f'toolDescription{i}']
+        tool_file = request.files[f'toolFile{i}']
+
+        tool_sensitive_headers = request.form.get(f'toolSensitiveHeaders{i}', '')
+        tool_sensitive_body = request.form.get(f'toolSensitiveBody{i}', '')
+
+        # Save the OpenAPI spec file
+        filename = secure_filename(tool_file.filename)
+        tool_file_path = os.path.join(OPENAPI_DIR, filename)
+        tool_file.save(tool_file_path)
+
+        # Add tool to database and generate client
+        add_tool_to_db(tool_name, tool_description, tool_file_path, tool_sensitive_headers, tool_sensitive_body)
+
+    return jsonify({"message": "Tools added successfully"}), 200
 
 # API endpoint for login
 @app.route('/login', methods=['POST'])
@@ -180,6 +311,7 @@ def update_config():
     initialize_twilio_client()
     initialize_elevenlabs_client()
     reinitialize_ai_clients()
+    initialize_tools()
     return jsonify({"message": "Config updated successfully"}), 200
 
 @app.route('/api/chats', methods=['GET'])
@@ -373,37 +505,3 @@ def event():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
-# if __name__ == '__main__':
-#     def start_ngrok():
-#         # Get the Ngrok auth token from the environment variable or config
-#         ngrok_auth_token = os.getenv('NGROK_AUTH_TOKEN', Config.get('NGROK_AUTH_TOKEN'))
-        
-#         if not ngrok_auth_token:
-#             raise ValueError("Ngrok auth token is not set. Please set NGROK_AUTH_TOKEN in config.json or as an environment variable.")
-
-#         # Start ngrok process with auth token
-#         ngrok_process = subprocess.Popen(['ngrok', 'http', '5000', '--authtoken', ngrok_auth_token], stdout=subprocess.PIPE)
-        
-#         # Give ngrok some time to start
-#         time.sleep(3)
-        
-#         # Get the public URL from ngrok's API
-#         response = requests.get('http://localhost:4040/api/tunnels')
-#         data = response.json()
-#         public_url = data['tunnels'][0]['public_url']
-#         return public_url
-
-#     # Check if we should use Ngrok
-#     if Config.get("USE_NGROK", False):
-#         # Start ngrok and get the public URL
-#         public_url = start_ngrok()
-#         print(f" * ngrok tunnel opened at {public_url}")
-
-#         # Update the configuration with the ngrok public URL
-#         Config.APP_PUBLIC_GATHER_URL = public_url + "/gather"
-#         Config.APP_PUBLIC_EVENT_URL = public_url + "/event"
-#     else:
-#         print(" * Ngrok is disabled. Please ensure your own reverse proxy is configured.")
-
-#     # Start the Flask app
-#     app.run(debug=True, host='0.0.0.0', port=5000)
