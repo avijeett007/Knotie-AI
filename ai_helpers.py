@@ -73,123 +73,6 @@ elif which_model == "Anthropic":
     }
 
 
-# def find_client_module(tool_name):
-#     """ Dynamically find the client module based on the tool's directory structure. """
-#     tool_dir = os.path.join(GENERATED_TOOLS_DIR, tool_name)
-    
-#     # Recursively search for the client.py file
-#     for root, dirs, files in os.walk(tool_dir):
-#         if 'client.py' in files:
-#             # Convert the path to a module path
-#             relative_path = os.path.relpath(root, GENERATED_TOOLS_DIR)
-#             module_path = relative_path.replace(os.path.sep, '.')
-#             return module_path + '.client'
-    
-#     # If client.py is not found, return None
-#     return None
-
-# def fetch_tools_from_db():
-#     if not os.path.exists('users.db'):
-#         logger.warning("Database file 'users.db' does not exist.")
-#         return []
-
-#     try:
-#         conn = sqlite3.connect('users.db')
-#         cursor = conn.cursor()
-#         cursor.execute('SELECT name, description, class_name, openapi_spec FROM tools')
-#         tools = cursor.fetchall()
-#     except sqlite3.OperationalError as e:
-#         logger.warning(f"Database error: {e}")
-#         return []
-#     finally:
-#         conn.close()
-
-#     return [{"name": row[0], "description": row[1], "class_name": row[2], "openapi_spec": row[3]} for row in tools]
-
-# def find_client_module(tool_name):
-#     """ Dynamically find the client module based on the tool's directory structure. """
-#     tool_dir = os.path.join(GENERATED_TOOLS_DIR, tool_name)
-    
-#     # Recursively search for the client.py file
-#     for root, dirs, files in os.walk(tool_dir):
-#         if 'client.py' in files:
-#             # Convert the path to a module path
-#             relative_path = os.path.relpath(root, GENERATED_TOOLS_DIR)
-#             module_path = relative_path.replace(os.path.sep, '.')
-#             return module_path + '.client'
-    
-#     # If client.py is not found, return None
-#     return None
-
-# def extract_base_url_from_openapi_file(openapi_spec_path):
-#     """ Extract the base URL from the OpenAPI spec file. """
-#     try:
-#         with open(openapi_spec_path, 'r') as file:
-#             # Load the OpenAPI spec as either JSON or YAML
-#             if openapi_spec_path.endswith('.json'):
-#                 openapi_spec = json.load(file)
-#             elif openapi_spec_path.endswith('.yaml') or openapi_spec_path.endswith('.yml'):
-#                 openapi_spec = yaml.safe_load(file)
-#             else:
-#                 logger.error(f"Unsupported file format for OpenAPI spec: {openapi_spec_path}")
-#                 return None
-#     except Exception as e:
-#         logger.error(f"Error reading OpenAPI spec file at {openapi_spec_path}: {e}")
-#         return None
-    
-#     servers = openapi_spec.get('servers', [])
-#     if servers:
-#         return servers[0].get('url')  # Assuming the first server URL is the base URL
-#     return None
-
-# # Initialize tools dynamically
-# initialized_tools = {}
-
-# def initialize_tools():
-#     tools_from_db = fetch_tools_from_db()
-
-#     for tool in tools_from_db:
-#         tool_name = tool["name"]
-#         openapi_spec_path = tool.get("openapi_spec")
-        
-#         # Ensure the OpenAPI spec path is valid
-#         if not openapi_spec_path or not os.path.exists(openapi_spec_path):
-#             logger.error(f"OpenAPI spec file not found for tool {tool_name} at path: {openapi_spec_path}")
-#             continue
-        
-#         client_module = find_client_module(tool_name)
-        
-#         if client_module is None:
-#             logger.error(f"Client module not found for tool {tool_name}")
-#             continue
-
-#         try:
-#             # Extract the base URL and operation IDs from the OpenAPI spec
-#             base_url = extract_base_url_from_openapi_file(openapi_spec_path)
-#             operation_ids = extract_operation_ids_from_openapi(openapi_spec_path)
-#             if not base_url:
-#                 logger.error(f"Base URL not found in the OpenAPI spec for tool {tool_name}")
-#                 continue
-
-#             # Add the root tool directory to sys.path
-#             sys.path.append(os.path.join(GENERATED_TOOLS_DIR, tool_name))
-#             module = importlib.import_module(client_module)
-#             ToolClass = getattr(module, 'Client')  # Assuming the generated class is named 'Client'
-            
-#             # Initialize the tool with the base URL and available operations
-#             initialized_tools[tool["name"]] = {
-#                 'client': ToolClass(base_url=base_url),
-#                 'operations': operation_ids
-#             }
-#             logger.info(f"tool initialized successfully with operations: {operation_ids.keys()}")
-#             print(f"tool initialized successfully with operations: {operation_ids.keys()}")
-#         except ModuleNotFoundError as e:
-#             logger.error(f"Error initializing tool {tool_name}: {e}")
-#         except AttributeError as e:
-#             logger.error(f"Error finding class or method in module {tool_name}: {e}")
-#         except Exception as e:
-#             logger.error(f"Unexpected error initializing tool {tool_name}: {e}")
-
 # Example usage:
 initialize_tools()
 
@@ -222,192 +105,6 @@ def reinitialize_ai_clients():
             "temperature": 0.5,
             "max_tokens": 100,
         }
-
-# def get_tool_and_spec(tool_name):
-#     conn = sqlite3.connect('users.db')
-#     cursor = conn.cursor()
-#     cursor.execute('SELECT name, description, class_name, openapi_spec FROM tools WHERE name = ?', (tool_name,))
-#     tool = cursor.fetchone()
-#     conn.close()
-    
-#     if tool:
-#         return {
-#             "name": tool[0],
-#             "description": tool[1],
-#             "class_name": tool[2],
-#             "openapi_spec": tool[3]
-#         }
-#     else:
-#         raise ValueError(f"Tool with name {tool_name} not found")
-
-
-# def get_api_info_from_openapi(openapi_spec, operation_id):
-#     spec = yaml.safe_load(openapi_spec)
-
-#     for path, path_item in spec['paths'].items():
-#         for operation, operation_item in path_item.items():
-#             if 'operationId' in operation_item and operation_item['operationId'] == operation_id:
-#                 method = operation.upper()
-#                 url = spec['servers'][0]['url'] + path
-#                 parameters = extract_parameters_from_openapi(openapi_spec)
-#                 return method, url, parameters
-
-#     raise ValueError(f"Operation ID {operation_id} not found in OpenAPI spec")
-
-
-# def call_api(tool_name, tool_params):
-#     logger.info(f"Calling tool: {tool_name}")
-#     print(f"Calling tool: {tool_name}")
-
-#     # Step 1: Get the tool and its OpenAPI spec
-#     tool_info = get_tool_and_spec(tool_name)
-#     openapi_spec = tool_info['openapi_spec']
-    
-#     # Step 2: Extract the relevant API information
-#     operation_id = tool_info['class_name']  # Assuming the operationId matches the class name
-#     method, url, parameters = get_api_info_from_openapi(openapi_spec, operation_id)
-    
-#     # Step 3: Prepare the request payload
-#     query_params = {}
-#     headers = {}
-#     body = {}
-
-#     # Assign parameters from tool_params to appropriate places (query, headers, body)
-#     for param_name, param_value in tool_params.items():
-#         if param_name in parameters['query']:
-#             query_params[param_name] = param_value
-#         elif param_name in parameters['header']:
-#             headers[param_name] = param_value
-#         elif param_name in parameters['body']:
-#             body[param_name] = param_value
-    
-#     # Step 4: Send the API request
-#     if method == 'GET':
-#         response = requests.get(url, params=query_params, headers=headers)
-#     elif method == 'POST':
-#         response = requests.post(url, json=body, params=query_params, headers=headers)
-#     # Add other HTTP methods as needed
-    
-#     # Step 5: Handle the response
-#     if response.status_code == 200:
-#         return response.json()  # Assuming the response is in JSON format
-#     else:
-#         return {"error": f"API call failed with status code {response.status_code}"}
-
-# def extract_parameters_from_operation(operation_item):
-#     """Extract parameters from the operation item in the OpenAPI spec."""
-#     parameters = {
-#         'query': {},
-#         'header': {},
-#         'path': {},
-#         'body': {}
-#     }
-
-#     # Handle 'parameters' (query, header, path)
-#     for param in operation_item.get('parameters', []):
-#         param_name = param['name']
-#         param_in = param['in']  # This could be 'query', 'header', 'path'
-#         param_schema = param.get('schema', {})
-
-#         if param_in in parameters:
-#             if 'enum' in param_schema:
-#                 parameters[param_in][param_name] = param_schema['enum']
-#             else:
-#                 parameters[param_in][param_name] = param_schema.get('type', 'string')
-
-#     # Handle 'requestBody' (body parameters)
-#     request_body = operation_item.get('requestBody', {})
-#     if request_body:
-#         content = request_body.get('content', {})
-#         for media_type, media_item in content.items():
-#             schema = media_item.get('schema', {})
-#             if schema.get('type') == 'object':
-#                 for prop_name, prop_schema in schema.get('properties', {}).items():
-#                     if 'enum' in prop_schema:
-#                         parameters['body'][prop_name] = prop_schema['enum']
-#                     else:
-#                         parameters['body'][prop_name] = prop_schema.get('type', 'string')
-
-#     return parameters
-
-# def extract_operation_ids_from_openapi(openapi_spec):
-#     """ Extract operation IDs from the OpenAPI spec. """
-#     spec = yaml.safe_load(openapi_spec)
-#     operation_ids = {}
-
-#     for path, path_item in spec.get('paths', {}).items():
-#         for operation, operation_item in path_item.items():
-#             operation_id = operation_item.get('operationId')
-#             if operation_id:
-#                 operation_ids[operation_id] = {
-#                     'method': operation.upper(),
-#                     'url': spec['servers'][0]['url'] + path,
-#                     'parameters': extract_parameters_from_operation(operation_item)
-#                 }
-
-#     return operation_ids
-
-# def extract_parameters_from_openapi(openapi_spec):
-#     logger.info(f"Extracting Function Parameters")
-    
-#     # If `openapi_spec` is a path, load the content first
-#     if isinstance(openapi_spec, str):
-#         if os.path.exists(openapi_spec):
-#             with open(openapi_spec, 'r') as file:
-#                 if openapi_spec.endswith('.json'):
-#                     spec = json.load(file)
-#                 elif openapi_spec.endswith('.yaml') or openapi_spec.endswith('.yml'):
-#                     spec = yaml.safe_load(file)
-#                 else:
-#                     logger.error(f"Unsupported file format for OpenAPI spec: {openapi_spec}")
-#                     return {}
-#         else:
-#             # If the string is not a path, assume it's a direct YAML/JSON content
-#             try:
-#                 spec = yaml.safe_load(openapi_spec)
-#             except Exception as e:
-#                 logger.error(f"Failed to parse OpenAPI spec content: {e}")
-#                 return {}
-#     else:
-#         # If `openapi_spec` is already a dict (parsed JSON/YAML), just use it
-#         spec = openapi_spec
-
-#     # Now extract parameters from the spec
-#     parameters = {
-#         'query': {},
-#         'header': {},
-#         'path': {},
-#         'body': {}
-#     }
-
-#     for path, path_item in spec.get('paths', {}).items():
-#         for operation, operation_item in path_item.items():
-#             # Handle 'parameters' in the operation (e.g., query, header, path)
-#             for param in operation_item.get('parameters', []):
-#                 param_name = param['name']
-#                 param_in = param['in']  # This could be 'query', 'header', 'path'
-#                 param_schema = param.get('schema', {})
-                
-#                 if param_in in parameters:
-#                     if 'enum' in param_schema:
-#                         parameters[param_in][param_name] = param_schema['enum']
-#                     else:
-#                         parameters[param_in][param_name] = param_schema.get('type', 'string')
-            
-#             # Handle 'requestBody' in the operation (e.g., body parameters)
-#             request_body = operation_item.get('requestBody', {})
-#             if request_body:
-#                 content = request_body.get('content', {})
-#                 for content_type, media_type in content.items():
-#                     schema = media_type.get('schema', {})
-#                     if schema.get('type') == 'object':
-#                         for prop_name, prop_schema in schema.get('properties', {}).items():
-#                             if 'enum' in prop_schema:
-#                                 parameters['body'][prop_name] = prop_schema['enum']
-#                             else:
-#                                 parameters['body'][prop_name] = prop_schema.get('type', 'string')
-
-#     return parameters
 
 reinitialize_ai_clients()
 
@@ -478,50 +175,6 @@ def get_tool_details(ai_output):
     except json.JSONDecodeError:
         raise ValueError("Invalid JSON format in AI output.")
 
-# def replace_sensitive_values(tool_headers, tool_body_parameters):
-#     # Replace the placeholder "sensitive_value" with the actual sensitive data
-#     actual_sensitive_data = get_sensitive_data_from_db()  # Retrieve actual data from your DB
-#     for key, value in tool_headers.items():
-#         if value == "sensitive_value":
-#             tool_headers[key] = actual_sensitive_data.get(key)
-
-#     for key, value in tool_body_parameters.items():
-#         if value == "sensitive_value":
-#             tool_body_parameters[key] = actual_sensitive_data.get(key)
-
-#     return tool_headers, tool_body_parameters
-
-# def get_sensitive_data_from_db(key):
-#     """
-#     Retrieves sensitive data from the database based on the provided key.
-
-#     :param key: The identifier for the sensitive data to retrieve.
-#     :return: The sensitive data corresponding to the key, or None if not found.
-#     """
-#     try:
-#         # Establish a connection to the database
-#         conn = sqlite3.connect('sensitive_data.db')  # Make sure the database file exists
-#         cursor = conn.cursor()
-
-#         # Query to fetch the sensitive value based on the provided key
-#         cursor.execute('SELECT value FROM sensitive_data WHERE key = ?', (key,))
-#         result = cursor.fetchone()
-
-#         # Check if the result is found
-#         if result:
-#             return result[0]  # Return the sensitive value
-#         else:
-#             logger.warning(f"No sensitive data found for key: {key}")
-#             return None
-
-#     except sqlite3.Error as e:
-#         logger.error(f"Database error: {e}")
-#         return None
-
-#     finally:
-#         # Close the database connection
-#         if conn:
-#             conn.close()
 
 def process_initial_message(call_sid, customer_name, customer_problem):
     initial_prompt = AGENT_STARTING_PROMPT_TEMPLATE.format(
@@ -548,6 +201,65 @@ def process_initial_message(call_sid, customer_name, customer_problem):
     response = gen_ai_output(message_to_send_to_ai, isToolResponse)
     return response
 
+# def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_id):
+#     tools_from_db = fetch_tools_from_db()
+#     tools_description = ""
+
+#     for tool in tools_from_db:
+#         tool_name = tool['name']
+#         tool_description = f"{tool_name}: {tool['description']}\nAvailable Operations:\n"
+        
+#         # Extracting operations and their details
+#         operation_ids = initialized_tools[tool_name]['operations']
+
+#         for operation_id, operation_details in operation_ids.items():
+#             tool_description += f"  - {operation_id}: {operation_details['method']} {operation_details['url']}\n"
+            
+#             # Adding headers, query parameters, and path parameters
+#             headers_description = ', '.join([f"{header}: {details}" for header, details in operation_details['parameters'].get('header', {}).items()])
+#             query_description = ', '.join([f"{param}: {details}" for param, details in operation_details['parameters'].get('query', {}).items()])
+#             path_description = ', '.join([f"{param}: {details}" for param, details in operation_details['parameters'].get('path', {}).items()])
+#             body_description = ', '.join([f"{param}: {details}" for param, details in operation_details['parameters'].get('body', {}).items()])
+
+#             if headers_description:
+#                 tool_description += f"    Headers: {headers_description}\n"
+#             if query_description:
+#                 tool_description += f"    Query Parameters: {query_description}\n"
+#             if path_description:
+#                 tool_description += f"    Path Parameters: {path_description}\n"
+#             if body_description:
+#                 tool_description += f"    Body Parameters: {body_description}\n"
+
+#         tools_description += tool_description + "\n"
+#     print("tool description is:" + tools_description)
+#     intent_tool_prompt = STAGE_TOOL_ANALYZER_PROMPT.format(
+#         salesperson_name=salesperson_name,
+#         company_name=company_name,
+#         company_business=company_business,
+#         conversation_purpose=conversation_purpose,
+#         conversation_stage_id=conversation_stage_id,
+#         conversation_stages=conversation_stages,
+#         conversation_history=message_history,
+#         company_products_services=company_products_services,
+#         user_input=user_input,
+#         tools=tools_description
+#     )
+
+#     print("Prompt being sent to AI:" + intent_tool_prompt)
+    
+#     message_to_send_to_ai = [
+#         {
+#             "role": "system",
+#             "content": intent_tool_prompt
+#         }
+#     ]
+#     message_to_send_to_ai.append(
+#         {"role": "user", "content": "You Must Respond in the JSON format specified in the system prompt"})
+#     isToolResponse = "yes"
+#     ai_output = gen_ai_output(message_to_send_to_ai, isToolResponse)
+#     print("AI Tool Model Output:" + ai_output)
+#     return ai_output
+
 def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_id):
     tools_from_db = fetch_tools_from_db()
     tools_description = ""
@@ -556,17 +268,48 @@ def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_i
         tool_name = tool['name']
         tool_description = f"{tool_name}: {tool['description']}\nAvailable Operations:\n"
         
-        # Extracting operations and their details
         operation_ids = initialized_tools[tool_name]['operations']
 
         for operation_id, operation_details in operation_ids.items():
             tool_description += f"  - {operation_id}: {operation_details['method']} {operation_details['url']}\n"
-            
-            # Adding headers, query parameters, and path parameters
-            headers_description = ', '.join([f"{header}: {details}" for header, details in operation_details['parameters'].get('header', {}).items()])
-            query_description = ', '.join([f"{param}: {details}" for param, details in operation_details['parameters'].get('query', {}).items()])
-            path_description = ', '.join([f"{param}: {details}" for param, details in operation_details['parameters'].get('path', {}).items()])
-            body_description = ', '.join([f"{param}: {details}" for param, details in operation_details['parameters'].get('body', {}).items()])
+
+            tool_info = get_tool_and_spec(tool_name)
+            sensitive_headers = json.loads(tool_info.get('sensitive_headers', '{}') or '{}')
+            sensitive_body = json.loads(tool_info.get('sensitive_body', '{}') or '{}')
+
+            # Headers
+            headers_description = ', '.join([
+                f"{header}: {details['type']}" +
+                (f" (enum: {details['enum']})" if details['enum'] else "") +
+                (" (sensitive)" if header in sensitive_headers else "") +
+                (" (mandatory)" if details.get('required') else "")
+                for header, details in operation_details['parameters'].get('header', {}).items()
+            ])
+
+            # Query Parameters
+            query_description = ', '.join([
+                f"{param}: {details['type']}" +
+                (f" (enum: {details['enum']})" if details['enum'] else "") +
+                (" (mandatory)" if details.get('required') else "")
+                for param, details in operation_details['parameters'].get('query', {}).items()
+            ])
+
+            # Path Parameters
+            path_description = ', '.join([
+                f"{param}: {details['type']}" +
+                (f" (enum: {details['enum']})" if details['enum'] else "") +
+                (" (mandatory)" if details.get('required') else "")
+                for param, details in operation_details['parameters'].get('path', {}).items()
+            ])
+
+            # Body Parameters
+            body_description = ', '.join([
+                f"{param}: {details['type']}" +
+                (f" (enum: {details['enum']})" if details['enum'] else "") +
+                (" (sensitive)" if param in sensitive_body else "") +
+                (" (mandatory)" if details.get('required') else "")
+                for param, details in operation_details['parameters'].get('body', {}).items()
+            ])
 
             if headers_description:
                 tool_description += f"    Headers: {headers_description}\n"
@@ -578,7 +321,7 @@ def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_i
                 tool_description += f"    Body Parameters: {body_description}\n"
 
         tools_description += tool_description + "\n"
-    print("tool description is:" + tools_description)
+
     intent_tool_prompt = STAGE_TOOL_ANALYZER_PROMPT.format(
         salesperson_name=salesperson_name,
         company_name=company_name,

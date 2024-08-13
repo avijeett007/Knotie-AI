@@ -174,15 +174,17 @@ TOOLS:
 
 {tools}
 
-Each tool has specific operations, and each operation may require different parameters, including headers, query parameters, path parameters, and body parameters. Consider these details carefully when deciding whether to call a tool and which parameters to include.
-
-Some headers or body parameters might be sensitive and are not sent to you. In such cases, you should use the placeholder string `\"sensitive_value\"` in your response. You must use placeholder string for sensitive text.
-
-You must comply with the below requirements during your response:
-Your Response must be in JSON Format containing `conversation_stage_id` as a number, `tool_required` as 'yes' or 'no', and when `tool_required` is 'yes', then only respond with `tool_name`, `operation_id`, `tool_headers`, `tool_parameters`, and `tool_body_parameters` (when parameters are available) as text. Check different scenario examples below.
-The conversation stage must be a number and no words.
-If NO tool needs to be called, then output `tool_required` as 'no'. Use the examples below.
-Only use the current conversation stage and conversation history to determine your answer!
+Each tool has specific operations and requires certain parameters, including headers, query parameters, path parameters, and body parameters. 
+**Only decide to call a tool if all required parameters are available through the conversation history**.
+**Important Instructions**:
+- **Never** use placeholder values such as "TBD" or "To-be-filled".
+- If all required parameters are not available, set `tool_required` to 'no' to help move the conversation forward for the user to provide the missing information.
+- Use `"sensitive_value"` for sensitive fields when the real value is not available to you.
+- Your Response must be in JSON format with the following fields: `conversation_stage_id` (number), `tool_required` ('yes' or 'no'). If `tool_required` is 'yes', include `tool_name`, `operation_id`, `tool_headers`, `tool_parameters`, and `tool_body_parameters` as applicable.
+- **Only** call a tool if **all** required parameters are available. If anything is missing, focus on gathering that information first.
+- Your response must be in JSON format as example below.
+                                                          
+                                                          
 Do not answer anything else nor add anything to your answer.
 
 Example 1:

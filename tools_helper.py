@@ -183,29 +183,36 @@ def extract_parameters_from_operation(operation_item):
             param_name = param.get('name')
             param_in = param.get('in')
             param_schema = param.get('schema', {})
+            is_required = param.get('required', False)
 
             if param_in in parameters and param_name:
-                if 'enum' in param_schema:
-                    parameters[param_in][param_name] = param_schema.get('enum')
-                else:
-                    parameters[param_in][param_name] = param_schema.get('type', 'string')
+                parameters[param_in][param_name] = {
+                    'type': param_schema.get('type', 'string'),
+                    'enum': param_schema.get('enum', []),
+                    'required': is_required
+                }
 
         request_body = operation_item.get('requestBody')
         if isinstance(request_body, dict):
             content = request_body.get('content', {})
             for media_type, media_item in content.items():
                 schema = media_item.get('schema', {})
+                required_fields = schema.get('required', [])
                 if schema.get('type') == 'object':
                     for prop_name, prop_schema in schema.get('properties', {}).items():
-                        if 'enum' in prop_schema:
-                            parameters['body'][prop_name] = prop_schema.get('enum')
-                        else:
-                            parameters['body'][prop_name] = prop_schema.get('type', 'string')
+                        is_required = prop_name in required_fields
+                        parameters['body'][prop_name] = {
+                            'type': prop_schema.get('type', 'string'),
+                            'enum': prop_schema.get('enum', []),
+                            'required': is_required
+                        }
 
     except Exception as e:
         logging.error(f"An error occurred while extracting parameters: {e}")
 
     return parameters
+
+
 
 def initialize_tools():
     tools_from_db = fetch_tools_from_db()
@@ -310,7 +317,7 @@ def call_api(tool_name, tool_parameters, operation_id, tool_headers, tool_body_p
     headers = tool_headers if tool_headers else {}
     body = tool_body_parameters if tool_body_parameters else {}
 
-    # Assign body parameters from tool_body_parameters to the body
+    # Assign parameters from tool_body_parameters to the body
     for param_name, param_value in tool_body_parameters.items():
         if param_name in parameters['body']:
             body[param_name] = param_value
@@ -333,7 +340,7 @@ def call_api(tool_name, tool_parameters, operation_id, tool_headers, tool_body_p
     logger.info(f"Request URL: {url}")
     logger.info(f"Request Headers: {headers}")
     logger.info(f"Request Query Params: {query_params}")
-    logger.info(f"Request Body: {body}")
+    logger.info(f"Request Body: {json.dumps(body)}")  # Convert body to JSON string for logging
     
     # Step 4: Send the API request
     try:
@@ -356,6 +363,7 @@ def call_api(tool_name, tool_parameters, operation_id, tool_headers, tool_body_p
     except Exception as e:
         logger.error(f"Error during API call: {e}")
         return {"error": str(e)}
+
 
 
 def replace_sensitive_values(headers, body_parameters, tool_name):
