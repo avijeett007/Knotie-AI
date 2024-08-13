@@ -123,9 +123,9 @@ def generate_tool_client(tool_name, tool_file_path):
     tool_output_dir = os.path.join(GENERATED_TOOLS_DIR, tool_name)
     
     # Check if the directory already exists and delete it if needed
-    if os.path.exists(tool_output_dir):
-        logger.info(f"Directory {tool_output_dir} exists. Overwriting.")
-        shutil.rmtree(tool_output_dir)  # Use shutil.rmtree to remove the directory
+    # if os.path.exists(tool_output_dir):
+    #     logger.info(f"Directory {tool_output_dir} exists. Overwriting.")
+    #     shutil.rmtree(tool_output_dir)  # Use shutil.rmtree to remove the directory
     
     # Generate the client using the OpenAPI spec
     try:
@@ -136,7 +136,7 @@ def generate_tool_client(tool_name, tool_file_path):
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to generate client for tool {tool_name}: {e}")
         raise
-    
+
 def add_tool_to_db(tool_name, tool_description, tool_file, tool_sensitive_headers, tool_sensitive_body):
     # Generate client for the tool
     generate_tool_client(tool_name, tool_file)
