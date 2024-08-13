@@ -254,35 +254,49 @@
                     <label for="toolFile${toolCount}">OpenAPI Specification File</label>
                     <input type="file" class="form-control-file" id="toolFile${toolCount}" required>
                 </div>
+                <div class="form-group">
+                    <label for="toolSensitiveHeaders${toolCount}">Sensitive Headers (JSON format)</label>
+                    <textarea class="form-control" id="toolSensitiveHeaders${toolCount}" rows="3" placeholder='{"header_name": "sensitive_value"}'></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="toolSensitiveBody${toolCount}">Sensitive Body Parameters (JSON format)</label>
+                    <textarea class="form-control" id="toolSensitiveBody${toolCount}" rows="3" placeholder='{"parameter_name": "sensitive_value"}'></textarea>
+                </div>
+
                 <hr>
             `;
             document.getElementById('tools-form').appendChild(toolForm);
         }
 
         async function submitTools() {
-            const formData = new FormData();
-            for (let i = 1; i <= toolCount; i++) {
-                const toolName = document.getElementById(`toolName${i}`).value;
-                const toolDescription = document.getElementById(`toolDescription${i}`).value;
-                const toolFile = document.getElementById(`toolFile${i}`).files[0];
-                if (toolName && toolDescription && toolFile) {
-                    formData.append(`toolName${i}`, toolName);
-                    formData.append(`toolDescription${i}`, toolDescription);
-                    formData.append(`toolFile${i}`, toolFile);
-                }
-            }
+    const formData = new FormData();
+    for (let i = 1; i <= toolCount; i++) {
+        const toolName = document.getElementById(`toolName${i}`).value;
+        const toolDescription = document.getElementById(`toolDescription${i}`).value;
+        const toolFile = document.getElementById(`toolFile${i}`).files[0];
+        const toolSensitiveHeaders = document.getElementById(`toolSensitiveHeaders${i}`).value;
+        const toolSensitiveBody = document.getElementById(`toolSensitiveBody${i}`).value;
 
-            const response = await fetch('/api/tools', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-            document.getElementById('tools-message').textContent = result.message;
-
-            // Reload the tools list after adding new tools
-            loadTools();
+        if (toolName && toolDescription && toolFile) {
+            formData.append(`toolName${i}`, toolName);
+            formData.append(`toolDescription${i}`, toolDescription);
+            formData.append(`toolFile${i}`, toolFile);
+            formData.append(`toolSensitiveHeaders${i}`, toolSensitiveHeaders);
+            formData.append(`toolSensitiveBody${i}`, toolSensitiveBody);
         }
+    }
+
+    const response = await fetch('/api/tools', {
+        method: 'POST',
+        body: formData
+    });
+
+    const result = await response.json();
+    document.getElementById('tools-message').textContent = result.message;
+
+    // Reload the tools list after adding new tools
+    loadTools();
+}
 
         function logout() {
             fetch('/logout')

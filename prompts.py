@@ -155,7 +155,7 @@ AGENT_PROMPT_OUTBOUND_TEMPLATE = PromptTemplate.from_template(
 
 STAGE_TOOL_ANALYZER_PROMPT = PromptTemplate.from_template("""
 You are a sales assistant helping your sales agent to determine the next stage of conversation to move to when talking to a user and decide if the sales agent needs to call a tool in order to move to the next stage of conversation.
-Company has following Products:{company_products_services}.
+Company has the following Products: {company_products_services}.
 Start of conversation history:
 ===
 {conversation_history}
@@ -164,7 +164,7 @@ Customer Says: {user_input}
 End of conversation history.
 
 Current Conversation stage is: {conversation_stage_id}
-Make sure to change and progress the conversation stage based on latest user input and conversation history. Your main focus should be the last Customer Input.
+Make sure to change and progress the conversation stage based on the latest user input and conversation history. Your main focus should be the last Customer Input.
 Determine what should be the next immediate conversation stage for the agent in the sales conversation by selecting only from the following options:
 {conversation_stages}
 
@@ -174,34 +174,54 @@ TOOLS:
 
 {tools}
 
-You must comply with the below requirement during your response:
-Your Response must be in JSON Format Containing conversation_stage_id as number, tool_required as 'yes' or 'no', and when tool_required is 'yes' then only respond tool_name, and tool_parameters (when parameter is available) as text. Check different scenario Examples below.
-The conversation stage must be number and no words.
-If NO tool needs to be called then output 'tool_required' as 'no'. Use example below.
+Each tool has specific operations, and each operation may require different parameters, including headers, query parameters, path parameters, and body parameters. Consider these details carefully when deciding whether to call a tool and which parameters to include.
+
+Some headers or body parameters might be sensitive and are not sent to you. In such cases, you should use the placeholder string `\"sensitive_value\"` in your response. You must use placeholder string for sensitive text.
+
+You must comply with the below requirements during your response:
+Your Response must be in JSON Format containing `conversation_stage_id` as a number, `tool_required` as 'yes' or 'no', and when `tool_required` is 'yes', then only respond with `tool_name`, `operation_id`, `tool_headers`, `tool_parameters`, and `tool_body_parameters` (when parameters are available) as text. Check different scenario examples below.
+The conversation stage must be a number and no words.
+If NO tool needs to be called, then output `tool_required` as 'no'. Use the examples below.
 Only use the current conversation stage and conversation history to determine your answer!
-If the conversation history is empty, always start with Introduction!
-If you think you should stay in the same conversation stage until user gives more input, output the current conversation_stage number.
 Do not answer anything else nor add anything to your answer.
 
 Example 1:
 Conversation history:
-assistant: Would you know the price of our Silver Gym Membership?
+assistant: Would you like know the price of our Silver Gym Membership?
 User: Yes, Sure.
-assistant: "conversation_stage_id": 3,"tool_required": "yes","tool_name": "PriceInquiry", "tool_parameters": "silver"
+assistant: "conversation_stage_id": 3, "tool_required": "yes", "tool_name": "PriceInquiry", 
+"operation_id": "fetchMembershipPrice",
+"tool_headers": {{"Authorization": "sensitive_value"}}, 
+"tool_parameters": {{}}, 
+"tool_body_parameters": {{"membership": "Silver-Gym-Membership"}}
 End of example 1.
 
 Example 2:
 Conversation history:
-assistant: Would you be happy to book an Free On-Site Appointment in our gym?
+assistant: Would you be happy to book a Free On-Site Appointment in our gym?
 User: Yes, Sure.
-assistant: "conversation_stage_id": 7,"tool_required": "yes","tool_name": "AppointmentBooking", "tool_parameters": "date"
+assistant: "conversation_stage_id": 7, "tool_required": "yes", "tool_name": "AppointmentBooking", 
+"operation_id": "bookAppointment",
+"tool_headers": {{"Authorization": "sensitive_value"}}, 
+"tool_parameters": {{"url": "book-appointment"}}, 
+"tool_body_parameters": {{"location": "Main Gym", "trainer": "John Doe"}}
 End of example 2.
 
 Example 3:
 Conversation history:
 assistant: Can you please help me understand what is your gym requirement?
-User: Yes, I'm having some back pain that's why considering gym
-assistant: "conversation_stage_id": 3,"tool_required": "no"
+User: Yes, I'm having some back pain that's why considering the gym.
+assistant: "conversation_stage_id": 3, "tool_required": "no"
 End of example 3.
 
+Example 4:
+Conversation history:
+assistant: Would you like to receive a summary of the available gym memberships?
+User: Yes, please.
+assistant: "conversation_stage_id": 5, "tool_required": "yes", "tool_name": "MembershipSummary", 
+"operation_id": "fetchSummary",
+"tool_headers": {{"Authorization": "sensitive_value"}}, 
+"tool_parameters": {{"url": "membership-summary"}}, 
+"tool_body_parameters": {{"userid": "johndoe"}}
+End of example 4.
 """)

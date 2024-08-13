@@ -29,6 +29,7 @@ class Config:
         cls.CONVERSATION_PURPOSE = dynamic_config.get('CONVERSATION_PURPOSE', 'Default Conversation Purpose')
         cls.AISALESAGENT_NAME = dynamic_config.get('AISALESAGENT_NAME', 'Default Agent Name')
         cls.AI_API_KEY = dynamic_config.get('AI_API_KEY', 'Default AI API Key')
+        cls.ENCRYPTION_KEY = dynamic_config.get('ENCRYPTION_KEY', 'Default Encryption Key')
         cls.WHICH_MODEL = dynamic_config.get('WHICH_MODEL', 'Default Model')
         cls.OPENAI_BASE_URL = dynamic_config.get('OPENAI_BASE_URL', 'https://api.default.com')
         cls.VOICE_MODE = dynamic_config.get('VOICE_MODE', 'Default Voice Mode')

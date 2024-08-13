@@ -9,7 +9,8 @@ import os
 import subprocess
 import requests
 from audio_helpers import text_to_speech, text_to_speech_stream, save_audio_file, initialize_elevenlabs_client
-from ai_helpers import process_initial_message, process_message, initiate_inbound_message, reinitialize_ai_clients, initialize_tools
+from ai_helpers import process_initial_message, process_message, initiate_inbound_message, reinitialize_ai_clients
+from tools_helper import initialize_tools, encrypt_data, decrypt_data
 from appUtils import clean_response, delayed_delete, save_message_history, get_message_history, process_elevenlabs_audio
 from config import Config
 import logging
@@ -60,6 +61,7 @@ config_data = load_config()
 
 # SQLite setup for user management
 def init_sqlite_db():
+    # Initialize user database
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS users (
@@ -67,14 +69,6 @@ def init_sqlite_db():
                         username TEXT UNIQUE NOT NULL,
                         password TEXT NOT NULL,
                         first_login INTEGER DEFAULT 1)''')
-    
-    # New table for storing tools
-    cursor.execute('''CREATE TABLE IF NOT EXISTS tools (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT UNIQUE NOT NULL,
-                        description TEXT NOT NULL,
-                        openapi_spec TEXT NOT NULL,
-                        class_name TEXT NOT NULL)''')
     
     conn.commit()
     
@@ -94,7 +88,22 @@ def init_sqlite_db():
     
     conn.close()
 
+def init_tool_db():
+    conn = sqlite3.connect('tools.db')
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS tools (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT UNIQUE NOT NULL,
+                        description TEXT NOT NULL,
+                        openapi_spec TEXT NOT NULL,
+                        class_name TEXT NOT NULL,
+                        sensitive_headers TEXT,
+                        sensitive_body TEXT)''')
+    conn.commit()
+    conn.close()
+
 init_sqlite_db()
+init_tool_db()
 
 def generate_tool_client(tool_name, tool_file_path):
     # Create a unique directory for each tool
@@ -108,21 +117,26 @@ def generate_tool_client(tool_name, tool_file_path):
     # Generate the client using the OpenAPI spec
     os.system(f'openapi-python-client generate --path {tool_file_path} --output-path {tool_output_dir}')
 
-def add_tool_to_db(tool_name, tool_description, tool_file):
+
+def add_tool_to_db(tool_name, tool_description, tool_file, tool_sensitive_headers, tool_sensitive_body):
     # Generate client for the tool
     generate_tool_client(tool_name, tool_file)
 
+    # Encrypt sensitive headers and body parameters
+    encrypted_headers = encrypt_data(tool_sensitive_headers) if tool_sensitive_headers else None
+    encrypted_body = encrypt_data(tool_sensitive_body) if tool_sensitive_body else None
+
     # Insert tool data into the database
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect('tools.db')
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO tools (name, description, openapi_spec, class_name) VALUES (?, ?, ?, ?)',
-                   (tool_name, tool_description, tool_file, f'{tool_name}.Client'))
+    cursor.execute('INSERT INTO tools (name, description, openapi_spec, class_name, sensitive_headers, sensitive_body) VALUES (?, ?, ?, ?, ?, ?)',
+                   (tool_name, tool_description, tool_file, f'{tool_name}.Client', encrypted_headers, encrypted_body))
     conn.commit()
     conn.close()
 
     # Initialize the tool after adding it
     initialize_tools()
-
+    
 # Twilio client initialization
 client = None
 
@@ -146,7 +160,7 @@ def get_tools():
     if 'logged_in' not in session:
         return jsonify({"error": "Not logged in"}), 403
 
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect('tools.db')
     cursor = conn.cursor()
     cursor.execute('SELECT id, name, description, openapi_spec FROM tools')
     tools = cursor.fetchall()
@@ -187,13 +201,16 @@ def add_tool():
         tool_description = request.form[f'toolDescription{i}']
         tool_file = request.files[f'toolFile{i}']
 
+        tool_sensitive_headers = request.form.get(f'toolSensitiveHeaders{i}', '')
+        tool_sensitive_body = request.form.get(f'toolSensitiveBody{i}', '')
+
         # Save the OpenAPI spec file
         filename = secure_filename(tool_file.filename)
         tool_file_path = os.path.join(OPENAPI_DIR, filename)
         tool_file.save(tool_file_path)
 
         # Add tool to database and generate client
-        add_tool_to_db(tool_name, tool_description, tool_file_path)
+        add_tool_to_db(tool_name, tool_description, tool_file_path, tool_sensitive_headers, tool_sensitive_body)
 
     return jsonify({"message": "Tools added successfully"}), 200
 
@@ -275,6 +292,7 @@ def update_config():
     initialize_twilio_client()
     initialize_elevenlabs_client()
     reinitialize_ai_clients()
+    initialize_tools()
     return jsonify({"message": "Config updated successfully"}), 200
 
 @app.route('/api/chats', methods=['GET'])
@@ -468,37 +486,3 @@ def event():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
-# if __name__ == '__main__':
-#     def start_ngrok():
-#         # Get the Ngrok auth token from the environment variable or config
-#         ngrok_auth_token = os.getenv('NGROK_AUTH_TOKEN', Config.get('NGROK_AUTH_TOKEN'))
-        
-#         if not ngrok_auth_token:
-#             raise ValueError("Ngrok auth token is not set. Please set NGROK_AUTH_TOKEN in config.json or as an environment variable.")
-
-#         # Start ngrok process with auth token
-#         ngrok_process = subprocess.Popen(['ngrok', 'http', '5000', '--authtoken', ngrok_auth_token], stdout=subprocess.PIPE)
-        
-#         # Give ngrok some time to start
-#         time.sleep(3)
-        
-#         # Get the public URL from ngrok's API
-#         response = requests.get('http://localhost:4040/api/tunnels')
-#         data = response.json()
-#         public_url = data['tunnels'][0]['public_url']
-#         return public_url
-
-#     # Check if we should use Ngrok
-#     if Config.get("USE_NGROK", False):
-#         # Start ngrok and get the public URL
-#         public_url = start_ngrok()
-#         print(f" * ngrok tunnel opened at {public_url}")
-
-#         # Update the configuration with the ngrok public URL
-#         Config.APP_PUBLIC_GATHER_URL = public_url + "/gather"
-#         Config.APP_PUBLIC_EVENT_URL = public_url + "/event"
-#     else:
-#         print(" * Ngrok is disabled. Please ensure your own reverse proxy is configured.")
-
-#     # Start the Flask app
-#     app.run(debug=True, host='0.0.0.0', port=5000)
