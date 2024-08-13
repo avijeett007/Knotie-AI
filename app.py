@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from langchain_core.prompts import PromptTemplate
 from flask_cors import CORS
 import os
+import shutil
 import subprocess
 import requests
 from audio_helpers import text_to_speech, text_to_speech_stream, save_audio_file, initialize_elevenlabs_client
@@ -22,6 +23,8 @@ from urllib.parse import quote_plus
 import uuid
 import sqlite3
 import importlib
+import shutil
+import re
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -58,6 +61,12 @@ def load_config():
 
 # Global variable to hold the configuration
 config_data = load_config()
+
+def is_valid_tool_name(tool_name):
+    """Validate the tool name to prevent directory traversal or other path manipulation."""
+    # Allow only alphanumeric characters and underscores in the tool name
+    # This prevents directory traversal and other malicious input
+    return re.match(r'^[\w-]+$', tool_name) is not None
 
 # SQLite setup for user management
 def init_sqlite_db():
@@ -106,18 +115,28 @@ init_sqlite_db()
 init_tool_db()
 
 def generate_tool_client(tool_name, tool_file_path):
+    # Validate the tool name
+    if not is_valid_tool_name(tool_name):
+        raise ValueError(f"Invalid tool name: {tool_name}")
+
     # Create a unique directory for each tool
     tool_output_dir = os.path.join(GENERATED_TOOLS_DIR, tool_name)
     
     # Check if the directory already exists and delete it if needed
     if os.path.exists(tool_output_dir):
         logger.info(f"Directory {tool_output_dir} exists. Overwriting.")
-        os.system(f'rm -rf {tool_output_dir}')
+        shutil.rmtree(tool_output_dir)  # Use shutil.rmtree to remove the directory
     
     # Generate the client using the OpenAPI spec
-    os.system(f'openapi-python-client generate --path {tool_file_path} --output-path {tool_output_dir}')
-
-
+    try:
+        subprocess.run(
+            ['openapi-python-client', 'generate', '--path', tool_file_path, '--output-path', tool_output_dir],
+            check=True
+        )
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Failed to generate client for tool {tool_name}: {e}")
+        raise
+    
 def add_tool_to_db(tool_name, tool_description, tool_file, tool_sensitive_headers, tool_sensitive_body):
     # Generate client for the tool
     generate_tool_client(tool_name, tool_file)
