@@ -41,4 +41,4 @@ Before setting up Knotie-AI, ensure you have the following prerequisites:
    Click Save Changes
    ```
 
-![Twilio Configuration](../../image.png)
+![Twilio Configuration](../images/image.png)

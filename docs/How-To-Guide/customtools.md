@@ -4,7 +4,7 @@ description: A detailed guide on how to integrate custom tools and APIs with Kno
 tags: Custom Tools, API Integration, Knotie-AI, Python
 ---
 
-# 🛠️ Custom Tools and APIs
+# 🛠️ Custom Tools and APIs - (This Guide is Outdated now !!). Use This [Guide](addcustomtoolsviaui.md)
 
 Integrating custom tools and APIs with Knotie-AI is straightforward. This guide will walk you through the steps required to add and configure your custom tools within the system.
 

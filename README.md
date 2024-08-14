@@ -1,6 +1,6 @@
 <p align="center">
     <!-- Placeholder for Logo Icon -->
-    <img src="./Knotie-ai.png" alt="Knotie-AI Logo" width="150" height="150">
+    <img src="./docs/images/Knotie-ai.png" alt="Knotie-AI Logo" width="150" height="150">
 </p>
 
 <h1 align="center">Knotie-AI</h1>
