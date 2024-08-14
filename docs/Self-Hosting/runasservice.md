@@ -4,7 +4,7 @@ description: Steps to set up Knotie-AI using Docker and configuring environment 
 tags: Setup, Docker, Configuration, Knotie-AI
 ---
 
-# ⚙️ Run Steps As Docker Service (For developers)
+# ⚙️ Run Steps As Docker Service (For Business Owners/Entrepreneurs/Non-Dev Purpose/Checking Out Purpose)
 
 ## Steps to Run
 
@@ -14,7 +14,7 @@ tags: Setup, Docker, Configuration, Knotie-AI
    cd knotie-ai
    ```
 
-2. 📂 **Navigate to the project directory** where `docker-compose.yml` is located.
+2. 📂 **Navigate to the project directory** where `docker-compose-deploy.yml` is located.
    ```bash
    cd knotie-ai
    ```
@@ -26,10 +26,10 @@ tags: Setup, Docker, Configuration, Knotie-AI
 
 4. 🛠️ **Run the following command to build and start the containers**:
    ```bash
-   docker-compose up --build
+   docker-compose -f docker-compose-deploy.yml up -d
    ```
 
-5. 🌐 **Access the application** via `http://localhost:5000` or another configured port.
+5. 🌐 **Access the application** via `http://localhost:5000` or another configured port or if hosting on cloud, use http://<public-ip>:5000.
 
 ---
 
@@ -38,14 +38,7 @@ tags: Setup, Docker, Configuration, Knotie-AI
 To stop the application, use the following Docker Compose command:
 
 ```bash
-docker-compose down
+ docker-compose -f docker-compose-deploy.yml down
 ```
 
-## 🔄 Changing Underlying Code
-
-If you've changed any code in the application, please make sure to use the following Docker Compose command to rebuild the image and start it:
-
-```bash
-docker-compose build --no-cache
-docker-compose up
-```
+Next, Follow the [Configuration Guide](installation.md)
