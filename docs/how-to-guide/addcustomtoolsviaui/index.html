@@ -9,24 +9,26 @@
     <meta name="generator" content="Retype 3.5.0">
 
     <!-- Primary Meta Tags -->
-    <title>&#128736;️ Troubleshooting</title>
-    <meta name="title" content="🛠️ Troubleshooting">
-    <meta name="description" content="This documentation will help you troubleshoot issues with Knotie-AI.">
+    <title>&#128736;️ Add Custom Tools and APIs</title>
+    <meta name="title" content="🛠️ Add Custom Tools and APIs">
+    <meta name="description" content="A detailed guide on how to integrate custom tools and APIs with Knotie-AI.">
 
     <!-- Canonical -->
-    <link rel="canonical" href="https://knotie-ai.pages.dev/docs/how-to-guide/troubleshooting/">
+    <link rel="canonical" href="https://knotie-ai.pages.dev/docs/how-to-guide/addcustomtoolsviaui/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://knotie-ai.pages.dev/docs/how-to-guide/troubleshooting/">
-    <meta property="og:title" content="🛠️ Troubleshooting">
-    <meta property="og:description" content="This documentation will help you troubleshoot issues with Knotie-AI.">
+    <meta property="og:url" content="https://knotie-ai.pages.dev/docs/how-to-guide/addcustomtoolsviaui/">
+    <meta property="og:title" content="🛠️ Add Custom Tools and APIs">
+    <meta property="og:description" content="A detailed guide on how to integrate custom tools and APIs with Knotie-AI.">
+    <meta property="og:image" content="https://knotie-ai.pages.dev/docs/images/custom_tools.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://knotie-ai.pages.dev/docs/how-to-guide/troubleshooting/">
-    <meta property="twitter:title" content="🛠️ Troubleshooting">
-    <meta property="twitter:description" content="This documentation will help you troubleshoot issues with Knotie-AI.">
+    <meta property="twitter:url" content="https://knotie-ai.pages.dev/docs/how-to-guide/addcustomtoolsviaui/">
+    <meta property="twitter:title" content="🛠️ Add Custom Tools and APIs">
+    <meta property="twitter:description" content="A detailed guide on how to integrate custom tools and APIs with Knotie-AI.">
+    <meta property="twitter:image" content="https://knotie-ai.pages.dev/docs/images/custom_tools.png">
 
     <script data-cfasync="false">(function () { var el = document.documentElement, m = localStorage.getItem("doc_theme"), wm = window.matchMedia; if (m === "dark" || (!m && wm && wm("(prefers-color-scheme: dark)").matches)) { el.classList.add("dark") } else { el.classList.remove("dark") } })();</script>
 
@@ -164,73 +166,240 @@
                                 <!-- Rendered if sidebar right is enabled -->
                                 <div id="docs-sidebar-right-toggle"></div>
                                 <!-- Page content  -->
-<doc-anchor-target id="troubleshooting" class="break-words">
+<doc-anchor-target id="add-custom-tools-and-apis-via-admin-ui" class="break-words">
     <h1>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#troubleshooting">#</doc-anchor-trigger>
-        <span><span class="docs-emoji">&#x1F6E0;&#xFE0F;</span> Troubleshooting</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#add-custom-tools-and-apis-via-admin-ui">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F6E0;&#xFE0F;</span> Add Custom Tools and APIs via Admin UI</span>
     </h1>
 </doc-anchor-target>
-<p>If you encounter any issues while running Knotie-AI, this guide will help you diagnose and resolve them.</p>
+<p>Integrating custom tools and APIs with Knotie-AI has become even more straightforward and easy. Now you don&#x27;t need to fiddle with code anymore. That means Knotie-AI is becoming more Business Friendly. This guide will walk you through the steps required to add and configure your custom tools within the system.</p>
 <hr>
-<doc-anchor-target id="basic-troubleshooting-steps">
+<doc-anchor-target id="start-knotie-ai">
     <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#basic-troubleshooting-steps">#</doc-anchor-trigger>
-        <span><span class="docs-emoji">&#x1F50D;</span> Basic Troubleshooting Steps</span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#start-knotie-ai">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F9E9;</span> Start Knotie-AI</span>
     </h2>
 </doc-anchor-target>
-<doc-anchor-target id="1-check-running-containers">
+<p>First ensure Knotie-AI is started locally. Follow this <a href="../../self-hosting/runasservice/">Guide</a>. If you&#x27;re a developer, follow this <a href="../../self-hosting/setup/">Guide</a> instead.</p>
+<hr>
+<doc-anchor-target id="open-admin-ui">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#open-admin-ui">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F4C4;</span> Open Admin UI</span>
+    </h2>
+</doc-anchor-target>
+<p>Once Knotie-AI is started, launch the recently updated Admin UI (With much more options added)
+Follow this <a href="../../self-hosting/installation/">Configuration and Secret Management Guide</a> to setup all important configuration first</p>
+<hr>
+<doc-anchor-target id="prepare-your-tools">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#prepare-your-tools">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F527;</span> Prepare Your Tools</span>
+    </h2>
+</doc-anchor-target>
+<p>To add tools through Admin UI, you need your API/Custom Tools to be available in OpenAPI 3.0 Specification (Yaml file)
+If you already have OpenAPI 3.0 Compliant YAML, follow <code v-pre>Add Your Tools</code> Section in this guide.</p>
+<p>If you don&#x27;t have OpenAPI 3.0 Compliant YAML, then follow the below steps.</p>
+<doc-anchor-target id="1-prepare-a-curl-command-for-your-toolapi">
     <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#1-check-running-containers">#</doc-anchor-trigger>
-        <span>1. <strong>Check Running Containers</strong></span>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#1-prepare-a-curl-command-for-your-toolapi">#</doc-anchor-trigger>
+        <span>1. Prepare a CURL command for your tool/api</span>
     </h3>
 </doc-anchor-target>
-<p>The first step in troubleshooting is to check the status of the running Docker containers. You can do this by using the following command:</p>
+<p>Open Postman or your favourite API Execution/Testing tool where you can test the custom API.
+Execute the API once, to test, if everything is allright.</p>
+<p>Now, copy the CURL command output for the api. It should look something like this -&gt;</p>
 <div class="codeblock-wrapper"><doc-codeblock>
-<pre class="language-bash"><code v-pre class="language-bash">docker ps</code></pre>
+<pre class="language-python"><code v-pre class="language-python">curl --location 'https://kno2getherworkflow.ddns.net/webhook/fetchMemberShip' \
+--header 'Authorization: b78f794ffed9' \
+--header 'Content-Type: application/json' \
+--data '{
+    &quot;membership&quot;: &quot;Gold-Gym-Membership&quot;
+}'</code></pre>
 </doc-codeblock></div>
-<p>This command will list all the running containers, showing their container IDs, names, and other important information.</p>
-<doc-anchor-target id="2-view-logs">
-    <h3>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#2-view-logs">#</doc-anchor-trigger>
-        <span>2. <strong>View Logs</strong></span>
-    </h3>
-</doc-anchor-target>
-<p>Once you have the container ID of the Knotie-AI service, you can view the logs to diagnose any issues. Use the following command to view the logs:</p>
-<div class="codeblock-wrapper"><doc-codeblock>
-<pre class="language-bash"><code v-pre class="language-bash">docker logs -f &lt;container_id&gt;</code></pre>
-</doc-codeblock></div>
-<p>Replace <code v-pre>&lt;container_id&gt;</code> with the actual container ID from the previous step.</p>
-<p>The <code v-pre>-f</code> flag allows you to follow the log output in real-time, which can be helpful for monitoring the application as it runs.</p>
-<hr>
-<doc-anchor-target id="common-issues-and-fixes">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#common-issues-and-fixes">#</doc-anchor-trigger>
-        <span><span class="docs-emoji">&#x26A0;&#xFE0F;</span> Common Issues and Fixes</span>
-    </h2>
-</doc-anchor-target>
-<p>While the above steps cover the basic troubleshooting approach, more detailed information and common fixes will be provided in future updates.</p>
-<p>Stay tuned!</p>
-<hr>
-<doc-anchor-target id="need-more-help">
-    <h2>
-        <doc-anchor-trigger class="header-anchor-trigger" to="#need-more-help">#</doc-anchor-trigger>
-        <span><span class="docs-emoji">&#x2753;</span> Need More Help?</span>
-    </h2>
-</doc-anchor-target>
-<p>If you&#x27;re unable to resolve the issue using the above steps, consider reaching out to the community:</p>
 <ul>
-<li><a href="https://community.kno2gether.com/communities/groups/kno2gether-community/home?invite=66b617e90fd0ff23e04efce2">Join our Community</a></li>
-<li><a href="https://www.youtube.com/channel/UCxgkN3luQgLQOd_L7tbOdhQ">Watch the Video Tutorials</a></li>
+<li><strong>Remove any sensitive information:</strong> From the Curl, remove any sensitive information, replace with &quot;*****&quot; or &quot;SENSITIVE INFO&quot;</li>
 </ul>
-<p>We’re here to help!</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre class="language-python"><code v-pre class="language-python">curl --location 'https://kno2getherworkflow.ddns.net/webhook/fetchMemberShip' \
+--header 'Authorization: ************' \
+--header 'Content-Type: application/json' \
+--data '{
+    &quot;membership&quot;: &quot;Gold-Gym-Membership&quot;
+}'</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="2-create-openapi-spec-document">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#2-create-openapi-spec-document">#</doc-anchor-trigger>
+        <span>2. Create OpenAPI Spec Document</span>
+    </h3>
+</doc-anchor-target>
+<p>Use any AI Chatbot like ChatGPT, Bard or Bing AI and use the below prompt to convert the curl into an OpenAPI Specification Document.</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre class="language-python"><code v-pre class="language-python">create openapi specification for the below curl API, dont keep the sensitive info like authorization header in the specification. Use the below Specification as an example guide.
+
+CURL To Convert:
+curl --location 'https://kno2getherworkflow.ddns.net/webhook/fetchMemberShip' \
+--header 'Authorization: ************' \
+--header 'Content-Type: application/json' \
+--data '{
+    &quot;membership&quot;: &quot;Gold-Gym-Membership&quot;
+}'
+
+Example Spec Document:
+
+openapi: 3.0.0
+info:
+  title: Appointment Booking API
+  description: API for booking appointments via webhook.
+  version: 1.0.0
+
+servers:
+  - url: https://kno2getherworkflow.ddns.net/webhook
+
+paths:
+  /bookAppointment:
+    post:
+      summary: Book an appointment
+      operationId: bookAppointment
+      description: Endpoint to book an appointment by providing the date, time, and customer name.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+          required: true
+          example: &quot;sensitive value&quot;
+          description: Authorization header required to access this endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date:
+                  type: string
+                  example: &quot;tomorrow&quot;
+                  description: &quot;The date for the appointment.&quot;
+                time:
+                  type: string
+                  example: &quot;10:00&quot;
+                  description: &quot;The time for the appointment.&quot;
+                customer_name:
+                  type: string
+                  example: &quot;John&quot;
+                  description: &quot;Name of the customer booking the appointment.&quot;
+              required:
+                - date
+                - time
+                - customer_name
+      responses:
+        '200':
+          description: Appointment booked successfully.
+        '400':
+          description: Invalid request.
+</code></pre>
+</doc-codeblock></div>
+<p>Copy the above prompt, change your CURL output and use any AI Model to generate the OpenAPI Spec Document.</p>
+<hr>
+<doc-anchor-target id="3-add-your-tools">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#3-add-your-tools">#</doc-anchor-trigger>
+        <span>3. Add Your Tools</span>
+    </h2>
+</doc-anchor-target>
+<doc-anchor-target id="1--now-headover-to-admin-ui-and-click-on-custom-tools">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#1--now-headover-to-admin-ui-and-click-on-custom-tools">#</doc-anchor-trigger>
+        <span>1.  Now Headover to ADMIN UI and click on Custom Tools.</span>
+    </h3>
+</doc-anchor-target>
+<p><figure class="content-center">
+    <img src="../../images/custom_tools.png" alt="Screenshot below">
+    <figcaption class="caption">Screenshot below</figcaption>
+</figure>
+</p>
+<doc-anchor-target id="2--click-on-add-tool-green-button-and-you-should-see-a-form-like-below-image">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#2--click-on-add-tool-green-button-and-you-should-see-a-form-like-below-image">#</doc-anchor-trigger>
+        <span>2.  Click on Add Tool (Green Button) and you should see a form like below image.</span>
+    </h3>
+</doc-anchor-target>
+<p><figure class="content-center">
+    <img src="../../images/add_tool.png" alt="Screenshot below">
+    <figcaption class="caption">Screenshot below</figcaption>
+</figure>
+</p>
+<doc-anchor-target id="3--enter-your-tool-name--please-enter-a-valid-and-relevant-tool-name-as-this-will-be-used-by-ai-model">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#3--enter-your-tool-name--please-enter-a-valid-and-relevant-tool-name-as-this-will-be-used-by-ai-model">#</doc-anchor-trigger>
+        <span>3.  Enter Your Tool Name : Please enter a valid and relevant tool name as this will be used by AI Model.</span>
+    </h3>
+</doc-anchor-target>
+<p>Enter Your Tool Description : This is very important that you add a brief appropriate description about what the Tool/API does. This is instrumental for AI Models to choose right tool during conversation.</p>
+<doc-anchor-target id="4--upload-openapi-spec-file">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#4--upload-openapi-spec-file">#</doc-anchor-trigger>
+        <span>4.  Upload OpenAPI Spec File.</span>
+    </h3>
+</doc-anchor-target>
+<doc-anchor-target id="5--now-add-your-sensitive-headers-as-json-dont-worry-the-agent-wont-send-header-as-json-this-is-for-secure-storing-of-your-sensitive-information">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#5--now-add-your-sensitive-headers-as-json-dont-worry-the-agent-wont-send-header-as-json-this-is-for-secure-storing-of-your-sensitive-information">#</doc-anchor-trigger>
+        <span>5.  Now add Your Sensitive Headers as JSON. (Don&#x27;t worry, the agent won&#x27;t send header as JSON, this is for secure storing of your sensitive information)</span>
+    </h3>
+</doc-anchor-target>
+<p>For example (as per given API above, I&#x27;ll add this, in the sensitive header text area)</p>
+<div class="codeblock-wrapper"><doc-codeblock>
+<pre class="language-none"><code v-pre class="language-none">{&quot;Authorization&quot;: &quot;b78f794ffed9&quot;}</code></pre>
+</doc-codeblock></div>
+<doc-anchor-target id="6--similarly-add-any-sensitive-information-which-should-be-sent-in-request-body">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#6--similarly-add-any-sensitive-information-which-should-be-sent-in-request-body">#</doc-anchor-trigger>
+        <span>6.  Similarly, add any sensitive information which should be sent in request body.</span>
+    </h3>
+</doc-anchor-target>
+<doc-anchor-target id="7--submit-tools">
+    <h3>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#7--submit-tools">#</doc-anchor-trigger>
+        <span>7.  Submit Tools.</span>
+    </h3>
+</doc-anchor-target>
+<p><figure class="content-center">
+    <img src="../../images/submit_tool.png" alt="Screenshot below">
+    <figcaption class="caption">Screenshot below</figcaption>
+</figure>
+</p>
+<p>You can add as many custom API/Tools using the above process.</p>
+<p>Note: This sensitive information won&#x27;t be shared to any AI Model. This will be kept safely within Database, encrypted.</p>
+<doc-anchor-target id="important-notes">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#important-notes">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x26A0;&#xFE0F;</span> Important Notes</span>
+    </h2>
+</doc-anchor-target>
+<ul>
+<li><strong>Technical Complexity:</strong> The Technical complexity behind this work was a milestone to achieve. We may not have been able to support all form of APIs(Nested/complex APIs). Please watchout the logs and if you face issues. Please raise a support request (If premium member), or please submit an issue through github Issue tab.</li>
+<li><strong>Future Improvements:</strong> A more user-friendly framework for adding tools is in the works. Stay tuned for updates!</li>
+</ul>
+<hr>
+<doc-anchor-target id="video-tutorial">
+    <h2>
+        <doc-anchor-trigger class="header-anchor-trigger" to="#video-tutorial">#</doc-anchor-trigger>
+        <span><span class="docs-emoji">&#x1F3A5;</span> Video Tutorial</span>
+    </h2>
+</doc-anchor-target>
+<p>For additional help, please watch the tutorial video on YouTube and join our community. If you encounter any issues, feel free to ask for help in the &quot;Ask For Help&quot; channel.</p>
+<p><a href="https://youtu.be/FlsN7rokbr0">Watch the Tutorial</a> | <a href="https://community.kno2gether.com/communities/groups/kno2gether-community/home?invite=66b617e90fd0ff23e04efce2">Join the Community</a></p>
 
                                 <div class="flex items-center mt-6 mb-6 clear-both">
                                     <span>
                                         <a href="../../../tags/">
                                             <svg class="inline-block -mb-px mr-1.5 text-blue-500 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" overflow="visible" fill="currentColor"><g><path d="M21.3 9.88l-8.59-8.59C12.52 1.11 12.27 1 12 1H2c-.55 0-1 .45-1 1v10c0 .27.11.52.29.71l8.59 8.58c.57.57 1.32.88 2.12.88s1.55-.31 2.12-.88l7.17-7.17a3.009 3.009 0 00.01-4.24zm-1.42 2.82l-7.17 7.17c-.39.39-1.02.39-1.42 0L3 11.59V3h8.59l8.29 8.29c.39.39.39 1.03 0 1.41z" /><path d="M7.01 6C6.45 6 6 6.45 6 7s.45 1 1 1 1-.45 1-1-.44-1-.99-1z" /></g></svg>
                                         </a>
-                                        <span class="mr-2"><a href="../../../tags/troubleshooting-docker-knotie-ai-debugging/" class="no-link inline-flex align-middle items-center justify-center font-medium leading-none whitespace-nowrap text-blue-500 dark:text-blue-400 border border-blue-500 dark:border-blue-400 hover:bg-blue-100 dark:hover:bg-transparent dark:hover:border-blue-200 dark:hover:text-blue-200 transition-colors duration-200 ease-out h-6 px-2 text-xs rounded-md">
-                                    <span>troubleshooting, docker, knotie-ai, debugging</span>
+                                        <span class="mr-2"><a href="../../../tags/custom-tools-api-integration-knotie-ai-python/" class="no-link inline-flex align-middle items-center justify-center font-medium leading-none whitespace-nowrap text-blue-500 dark:text-blue-400 border border-blue-500 dark:border-blue-400 hover:bg-blue-100 dark:hover:bg-transparent dark:hover:border-blue-200 dark:hover:text-blue-200 transition-colors duration-200 ease-out h-6 px-2 text-xs rounded-md">
+                                    <span>custom tools, api integration, knotie-ai, python</span>
                                 </a></span>
                                     </span>
                                 </div>
@@ -242,20 +411,20 @@
                             
                                 <nav class="flex mt-14">
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../../docs/how-to-guide/customtools/">
+                                        <a class="px-5 py-4 h-full flex items-center break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-l-lg transition-colors duration-150 relative hover:z-5" href="../../../docs/how-to-guide/">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="mr-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19 11H7.41l5.29-5.29a.996.996 0 10-1.41-1.41l-7 7a1 1 0 000 1.42l7 7a1.024 1.024 0 001.42-.01.996.996 0 000-1.41L7.41 13H19c.55 0 1-.45 1-1s-.45-1-1-1z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                             <span>
                                                 <span class="block text-xs font-normal text-gray-400 dark:text-dark-400">Previous</span>
-                                                <span class="block mt-1">🛠️ Custom Tools and AP​Is</span>
+                                                <span class="block mt-1">How-​To Guide</span>
                                             </span>
                                         </a>
                                     </div>
                             
                                     <div class="w-1/2">
-                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../../docs/how-to-guide/opensource/">
+                                        <a class="px-5 py-4 -mx-px h-full flex items-center justify-end break-normal font-medium text-blue-500 dark:text-blue-400 border border-gray-300 hover:border-gray-400 dark:border-dark-650 dark:hover:border-dark-450 rounded-r-lg transition-colors duration-150 relative hover:z-5" href="../../../docs/how-to-guide/customtools/">
                                             <span>
                                                 <span class="block text-xs font-normal text-right text-gray-400 dark:text-dark-400">Next</span>
-                                                <span class="block mt-1">Open​Source</span>
+                                                <span class="block mt-1">🛠️ Custom Tools and AP​Is</span>
                                             </span>
                                             <svg xmlns="http://www.w3.org/2000/svg" class="ml-3" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" overflow="visible"><path d="M19.92 12.38a1 1 0 00-.22-1.09l-7-7a.996.996 0 10-1.41 1.41l5.3 5.3H5c-.55 0-1 .45-1 1s.45 1 1 1h11.59l-5.29 5.29a.996.996 0 000 1.41c.19.2.44.3.7.3s.51-.1.71-.29l7-7c.09-.09.16-.21.21-.33z" /><path fill="none" d="M0 0h24v24H0z" /></svg>
                                         </a>
@@ -299,6 +468,6 @@
 
     <div id="docs-overlay-target"></div>
 
-    <script data-cfasync="false">window.__DOCS__ = { "title": "🛠️ Troubleshooting", level: 3, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
+    <script data-cfasync="false">window.__DOCS__ = { "title": "🛠️ Add Custom Tools and APIs", level: 3, icon: "file", hasPrism: true, hasMermaid: false, hasMath: false, tocDepth: 23 }</script>
 </body>
 </html>
