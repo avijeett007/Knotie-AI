@@ -13,6 +13,8 @@ from audio_helpers import text_to_speech, text_to_speech_stream, save_audio_file
 from ai_helpers import process_initial_message, process_message, initiate_inbound_message, reinitialize_ai_clients
 from tools_helper import initialize_tools, encrypt_data, decrypt_data
 from appUtils import clean_response, delayed_delete, save_message_history, get_message_history, process_elevenlabs_audio
+from prompts import AGENT_STARTING_PROMPT_TEMPLATE, STAGE_TOOL_ANALYZER_PROMPT, AGENT_PROMPT_OUTBOUND_TEMPLATE, \
+    AGENT_PROMPT_INBOUND_TEMPLATE
 from config import Config
 import logging
 import threading
@@ -71,7 +73,7 @@ def is_valid_tool_name(tool_name):
 # SQLite setup for user management
 def init_sqlite_db():
     # Initialize user database
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect('knotie.db')
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS users (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -94,12 +96,7 @@ def init_sqlite_db():
                         role TEXT NOT NULL,
                         content TEXT NOT NULL)''')
     conn.commit()
-    
-    conn.close()
 
-def init_tool_db():
-    conn = sqlite3.connect('tools.db')
-    cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS tools (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT UNIQUE NOT NULL,
@@ -109,10 +106,30 @@ def init_tool_db():
                         sensitive_headers TEXT,
                         sensitive_body TEXT)''')
     conn.commit()
+ 
+     # Create prompts table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS prompts (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT UNIQUE NOT NULL,
+                        template TEXT NOT NULL);''')
+    conn.commit()
+
+    # Insert the default prompts into the DB if they don't already exist
+    prompts = [
+        ('AGENT_PROMPT_OUTBOUND_TEMPLATE', AGENT_PROMPT_OUTBOUND_TEMPLATE.template),
+        ('AGENT_PROMPT_INBOUND_TEMPLATE', AGENT_PROMPT_INBOUND_TEMPLATE.template),
+        ('STAGE_TOOL_ANALYZER_PROMPT', STAGE_TOOL_ANALYZER_PROMPT.template),
+        ('AGENT_STARTING_PROMPT_TEMPLATE', AGENT_STARTING_PROMPT_TEMPLATE.template)
+    ]
+
+    for name, template in prompts:
+        cursor.execute('SELECT * FROM prompts WHERE name = ?', (name,))
+        if cursor.fetchone() is None:
+            cursor.execute('''INSERT INTO prompts (name, template) VALUES (?, ?)''', (name, template))
+            conn.commit()
     conn.close()
 
 init_sqlite_db()
-init_tool_db()
 
 def generate_tool_client(tool_name, tool_file_path):
     # Validate the tool name
@@ -146,7 +163,7 @@ def add_tool_to_db(tool_name, tool_description, tool_file, tool_sensitive_header
     encrypted_body = encrypt_data(tool_sensitive_body) if tool_sensitive_body else None
 
     # Insert tool data into the database
-    conn = sqlite3.connect('tools.db')
+    conn = sqlite3.connect('knotie.db')
     cursor = conn.cursor()
     cursor.execute('INSERT INTO tools (name, description, openapi_spec, class_name, sensitive_headers, sensitive_body) VALUES (?, ?, ?, ?, ?, ?)',
                    (tool_name, tool_description, tool_file, f'{tool_name}.Client', encrypted_headers, encrypted_body))
@@ -174,12 +191,48 @@ initialize_elevenlabs_client()
 # initialize_tools()
 
 
+@app.route('/api/prompts', methods=['GET'])
+def get_prompts():
+    if 'logged_in' not in session:
+        return jsonify({"error": "Not logged in"}), 403
+
+    conn = sqlite3.connect('knotie.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT name, template FROM prompts')
+    prompts = cursor.fetchall()
+    conn.close()
+
+    prompts_list = [{"name": prompt[0], "template": prompt[1]} for prompt in prompts]
+    return jsonify(prompts_list)
+
+
+@app.route('/api/prompts', methods=['PUT'])
+def update_prompt():
+    if 'logged_in' not in session:
+        return jsonify({"error": "Not logged in"}), 403
+
+    data = request.json
+    prompt_name = data.get('name')
+    prompt_template = data.get('template')
+
+    if not prompt_name or not prompt_template:
+        return jsonify({"error": "Invalid request data"}), 400
+
+    conn = sqlite3.connect('knotie.db')
+    cursor = conn.cursor()
+    cursor.execute('UPDATE prompts SET template = ? WHERE name = ?', (prompt_template, prompt_name))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Prompt updated successfully"}), 200
+
+
 @app.route('/api/tools', methods=['GET'])
 def get_tools():
     if 'logged_in' not in session:
         return jsonify({"error": "Not logged in"}), 403
 
-    conn = sqlite3.connect('tools.db')
+    conn = sqlite3.connect('knotie.db')
     cursor = conn.cursor()
     cursor.execute('SELECT id, name, description, openapi_spec FROM tools')
     tools = cursor.fetchall()
@@ -240,7 +293,7 @@ def login():
     username = data.get('username')
     password = data.get('password')
     
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect('knotie.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))
     user = cursor.fetchone()
@@ -262,7 +315,7 @@ def change_password():
     data = request.json
     new_password = data.get('new_password')
     
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect('knotie.db')
     cursor = conn.cursor()
     cursor.execute('UPDATE users SET password = ?, first_login = 0 WHERE username = ?', (new_password, session['username']))
     conn.commit()

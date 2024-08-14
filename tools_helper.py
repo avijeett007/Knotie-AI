@@ -29,12 +29,12 @@ def decrypt_data(data):
     return cipher.decrypt(data.encode()).decode()
 
 def fetch_tools_from_db():
-    if not os.path.exists('tools.db'):
-        logger.warning("Database file 'tools.db' does not exist.")
+    if not os.path.exists('knotie.db'):
+        logger.warning("Database file 'knotie.db' does not exist.")
         return []
 
     try:
-        conn = sqlite3.connect('tools.db')
+        conn = sqlite3.connect('knotie.db')
         cursor = conn.cursor()
         cursor.execute('SELECT name, description, class_name, openapi_spec FROM tools')
         tools = cursor.fetchall()
@@ -262,7 +262,7 @@ def initialize_tools():
 # AI Processing and Tool Usage
 
 def get_tool_and_spec(tool_name):
-    conn = sqlite3.connect('tools.db')
+    conn = sqlite3.connect('knotie.db')
     cursor = conn.cursor()
     cursor.execute('SELECT name, description, class_name, openapi_spec, sensitive_headers, sensitive_body FROM tools WHERE name = ?', (tool_name,))
     tool = cursor.fetchone()
