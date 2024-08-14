@@ -9,8 +9,7 @@ from groq import Groq
 from anthropic import Anthropic
 import json
 from langchain_core.prompts import PromptTemplate
-from prompts import AGENT_STARTING_PROMPT_TEMPLATE, STAGE_TOOL_ANALYZER_PROMPT, AGENT_PROMPT_OUTBOUND_TEMPLATE, \
-    AGENT_PROMPT_INBOUND_TEMPLATE
+from prompts import get_prompt_template
 from flask import session  # Uncomment it after testing.
 from stages import OUTBOUND_CONVERSATION_STAGES, INBOUND_CONVERSATION_STAGES
 import logging
@@ -177,7 +176,8 @@ def get_tool_details(ai_output):
 
 
 def process_initial_message(call_sid, customer_name, customer_problem):
-    initial_prompt = AGENT_STARTING_PROMPT_TEMPLATE.format(
+    initial_prompt_template = get_prompt_template('AGENT_STARTING_PROMPT_TEMPLATE')
+    initial_prompt = initial_prompt_template.format(
         salesperson_name=salesperson_name,
         company_name=company_name,
         company_business=company_business,
@@ -200,65 +200,6 @@ def process_initial_message(call_sid, customer_name, customer_problem):
     isToolResponse = "no"
     response = gen_ai_output(message_to_send_to_ai, isToolResponse)
     return response
-
-# def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_id):
-#     tools_from_db = fetch_tools_from_db()
-#     tools_description = ""
-
-#     for tool in tools_from_db:
-#         tool_name = tool['name']
-#         tool_description = f"{tool_name}: {tool['description']}\nAvailable Operations:\n"
-        
-#         # Extracting operations and their details
-#         operation_ids = initialized_tools[tool_name]['operations']
-
-#         for operation_id, operation_details in operation_ids.items():
-#             tool_description += f"  - {operation_id}: {operation_details['method']} {operation_details['url']}\n"
-            
-#             # Adding headers, query parameters, and path parameters
-#             headers_description = ', '.join([f"{header}: {details}" for header, details in operation_details['parameters'].get('header', {}).items()])
-#             query_description = ', '.join([f"{param}: {details}" for param, details in operation_details['parameters'].get('query', {}).items()])
-#             path_description = ', '.join([f"{param}: {details}" for param, details in operation_details['parameters'].get('path', {}).items()])
-#             body_description = ', '.join([f"{param}: {details}" for param, details in operation_details['parameters'].get('body', {}).items()])
-
-#             if headers_description:
-#                 tool_description += f"    Headers: {headers_description}\n"
-#             if query_description:
-#                 tool_description += f"    Query Parameters: {query_description}\n"
-#             if path_description:
-#                 tool_description += f"    Path Parameters: {path_description}\n"
-#             if body_description:
-#                 tool_description += f"    Body Parameters: {body_description}\n"
-
-#         tools_description += tool_description + "\n"
-#     print("tool description is:" + tools_description)
-#     intent_tool_prompt = STAGE_TOOL_ANALYZER_PROMPT.format(
-#         salesperson_name=salesperson_name,
-#         company_name=company_name,
-#         company_business=company_business,
-#         conversation_purpose=conversation_purpose,
-#         conversation_stage_id=conversation_stage_id,
-#         conversation_stages=conversation_stages,
-#         conversation_history=message_history,
-#         company_products_services=company_products_services,
-#         user_input=user_input,
-#         tools=tools_description
-#     )
-
-#     print("Prompt being sent to AI:" + intent_tool_prompt)
-    
-#     message_to_send_to_ai = [
-#         {
-#             "role": "system",
-#             "content": intent_tool_prompt
-#         }
-#     ]
-#     message_to_send_to_ai.append(
-#         {"role": "user", "content": "You Must Respond in the JSON format specified in the system prompt"})
-#     isToolResponse = "yes"
-#     ai_output = gen_ai_output(message_to_send_to_ai, isToolResponse)
-#     print("AI Tool Model Output:" + ai_output)
-#     return ai_output
 
 def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_id):
     tools_from_db = fetch_tools_from_db()
@@ -321,8 +262,8 @@ def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_i
                 tool_description += f"    Body Parameters: {body_description}\n"
 
         tools_description += tool_description + "\n"
-
-    intent_tool_prompt = STAGE_TOOL_ANALYZER_PROMPT.format(
+    intent_tool_prompt_template = get_prompt_template('STAGE_TOOL_ANALYZER_PROMPT')
+    intent_tool_prompt = intent_tool_prompt_template.format(
         salesperson_name=salesperson_name,
         company_name=company_name,
         company_business=company_business,
@@ -352,7 +293,8 @@ def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_i
 
 
 def initiate_inbound_message(call_sid):
-    initial_response = AGENT_PROMPT_INBOUND_TEMPLATE.format(
+    initial_prompt_template = get_prompt_template('AGENT_PROMPT_INBOUND_TEMPLATE')
+    initial_response = initial_prompt_template.format(
         salesperson_name=salesperson_name,
         company_name=company_name
     )
@@ -390,7 +332,8 @@ def process_message(call_sid, message_history, user_input):
         tool_output = "Some Error Occured In calling the tools. Ask User if its okay that you callback the user later with answer of the query."
 
     print("Creating inbound prompt template")
-    inbound_prompt = AGENT_PROMPT_OUTBOUND_TEMPLATE.format(
+    outbound_prompt_template = get_prompt_template('AGENT_PROMPT_OUTBOUND_TEMPLATE')
+    inbound_prompt = outbound_prompt_template.format(
         salesperson_name=salesperson_name,
         company_name=company_name,
         company_business=company_business,

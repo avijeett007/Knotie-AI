@@ -1,26 +1,5 @@
-# MIT License
-# 
-# Copyright (c) [Year] [Your Name/Your Company]
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 from langchain_core.prompts import PromptTemplate
+import sqlite3
 
 AGENT_STARTING_PROMPT_TEMPLATE = PromptTemplate.from_template(
     """Never forget your name is {salesperson_name}. 
@@ -98,60 +77,6 @@ AGENT_PROMPT_OUTBOUND_TEMPLATE = PromptTemplate.from_template(
 )
 
 
-# AGENT_PROMPT_OUTBOUND_TEMPLATE = PromptTemplate.from_template(
-#     """Never forget your name is {salesperson_name}. 
-# You're an expert Sales Representative at {company_name}. {company_name}'s business is the following: {company_business}.
-# You are contacting a potential prospect in order to {conversation_purpose}. Remember you've called the customer and you are continuing the phone conversation.
-
-# If you're asked about where you got the user's contact information, say that you got it from form filled up in the Company's Website.
-# Keep your responses in short length to retain the user's attention. Never produce lists, just answers.
-# Always think about at which conversation stage you are at before answering:
-# Current Conversation stage is: {conversation_stage_id}
-# Now determine your response based on below conversation stages :
-# {conversation_stages}
-
-# You may have called external tools/functions/api to get information to use in your response. Use the output from external tools/function calling as part of your response to the user whenever appropriate.
-
-# TOOLS_RESPONSE
-# --------------
-# {tools_response}
-
-# Example 1:
-# Conversation history:
-# {salesperson_name}: Hey, good morning! <END_OF_TURN>
-# User: Hello, who is this? 
-# {salesperson_name}: This is {salesperson_name} calling from {company_name}. How are you? 
-# User: I am well, why are you calling?
-# {salesperson_name}: I am calling to talk about options for your gym membership. <END_OF_TURN>
-# User: I am not interested, thanks. 
-# {salesperson_name}: Alright, no worries, have a good day! <END_OF_TURN> <END_OF_CALL>
-# End of example 1.
-
-# Example 2:
-# Conversation history:
-# {salesperson_name}: Hello! This is {salesperson_name} calling from {company_name} <END_OF_TURN>
-# User: Hello, why are you calling?
-# {salesperson_name}: Calling you to discuss your interest on our Gym membership <END_OF_TURN>
-# User: Okay. Go ahead 
-# {salesperson_name}: Can I know if there is any problem you are facing for which you want to opt for gym membership? <END_OF_TURN>
-# User: Yes. I'm having a backpain these days.
-# {salesperson_name}: I'm sorry to hear that. I think we have a perfect gym option that can help you. <END_OF_TURN>
-# End of example 2.
-
-# You must respond according to the previous conversation history if any and the stage of the conversation you are at. Make sure to not regenerate same or similar response in a conversation based on the history unless necessary. For example, if an onsite appointment is already offered and you've receieved response, don't repeat it.
-# Only generate one response at a time! When you are done generating, end with '<END_OF_TURN>' to give the user a chance to respond. When the conversation is over, output <END_OF_CALL>.
-
-# Start of conversation history:
-# ===
-# {conversation_history}
-# ===
-# End of conversation history.
-
-# {salesperson_name}:"""
-# )
-
-
-
 
 STAGE_TOOL_ANALYZER_PROMPT = PromptTemplate.from_template("""
 You are a sales assistant helping your sales agent to determine the next stage of conversation to move to when talking to a user and decide if the sales agent needs to call a tool in order to move to the next stage of conversation.
@@ -227,3 +152,17 @@ assistant: "conversation_stage_id": 5, "tool_required": "yes", "tool_name": "Mem
 "tool_body_parameters": {{"userid": "johndoe"}}
 End of example 4.
 """)
+
+def get_prompt_template(prompt_name):
+    """Fetch prompt template from the database by name and return it as a PromptTemplate object."""
+    conn = sqlite3.connect('knotie.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT template FROM prompts WHERE name = ?', (prompt_name,))
+    result = cursor.fetchone()
+    conn.close()
+    if result:
+        template_string = result[0]
+        # Convert the string to a PromptTemplate object
+        return PromptTemplate.from_template(template_string)
+    else:
+        raise ValueError(f"Prompt with name {prompt_name} not found in the database.")
