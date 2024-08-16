@@ -1,8 +1,11 @@
 import os
 import json
+import base64
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 class Config:
     # Static config from environment variables
@@ -49,6 +52,19 @@ class Config:
         cls.APP_PUBLIC_GATHER_URL = f"{cls.APP_PUBLIC_URL}/gather"
         cls.APP_PUBLIC_EVENT_URL = f"{cls.APP_PUBLIC_URL}/event"
         cls.CACHE_ENABLED = dynamic_config.get('CACHE_ENABLED', False)
+    @classmethod
+    def validate_encryption_key(cls):
+        if cls.ENCRYPTION_KEY and cls.ENCRYPTION_KEY != "Enter a strong ENCRYPTION_KEY":
+            try:
+                # Ensure the key is base64 url-safe encoded and 32 bytes long
+                base64.urlsafe_b64decode(cls.ENCRYPTION_KEY)
+                logger.info("ENCRYPTION_KEY is valid and set.")
+            except Exception as e:
+                logger.error("Invalid ENCRYPTION_KEY. It must be a 32-byte base64-encoded string.")
+                cls.ENCRYPTION_KEY = None
+        else:
+            logger.warning("ENCRYPTION_KEY is not set or is invalid. Please ensure it is updated by the admin.")
+            cls.ENCRYPTION_KEY = None
 
 Config.initialize()
 
