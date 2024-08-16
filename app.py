@@ -11,7 +11,7 @@ import subprocess
 import requests
 from audio_helpers import text_to_speech, text_to_speech_stream, save_audio_file, initialize_elevenlabs_client
 from ai_helpers import process_initial_message, process_message, initiate_inbound_message, reinitialize_ai_clients
-from tools_helper import initialize_tools, encrypt_data, decrypt_data
+from tools_helper import initialize_tools, EncryptionHelper
 from appUtils import clean_response, delayed_delete, save_message_history, get_message_history, process_elevenlabs_audio
 from prompts import AGENT_STARTING_PROMPT_TEMPLATE, STAGE_TOOL_ANALYZER_PROMPT, AGENT_PROMPT_OUTBOUND_TEMPLATE, \
     AGENT_PROMPT_INBOUND_TEMPLATE
@@ -159,8 +159,8 @@ def add_tool_to_db(tool_name, tool_description, tool_file, tool_sensitive_header
     generate_tool_client(tool_name, tool_file)
 
     # Encrypt sensitive headers and body parameters
-    encrypted_headers = encrypt_data(tool_sensitive_headers) if tool_sensitive_headers else None
-    encrypted_body = encrypt_data(tool_sensitive_body) if tool_sensitive_body else None
+    encrypted_headers = EncryptionHelper.encrypt_data(tool_sensitive_headers) if tool_sensitive_headers else None
+    encrypted_body = EncryptionHelper.encrypt_data(tool_sensitive_body) if tool_sensitive_body else None
 
     # Insert tool data into the database
     conn = sqlite3.connect('knotie.db')

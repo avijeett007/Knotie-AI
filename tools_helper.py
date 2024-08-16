@@ -1,5 +1,3 @@
-# tools_helper.py
-
 import os
 import yaml
 import json
@@ -11,22 +9,35 @@ from config import Config
 from cryptography.fernet import Fernet
 import sys
 
-
 GENERATED_TOOLS_DIR = 'generated_tools/'
 logger = logging.getLogger(__name__)
 # Initialize tools dynamically
 initialized_tools = {}
-# Use this key to encrypt/decrypt sensitive data
-# It's recommended to store this key securely, such as in an environment variable
-encryption_key = Config.ENCRYPTION_KEY
-cipher = Fernet(encryption_key)
+
+class EncryptionHelper:
+    _cipher = None
+
+    @classmethod
+    def get_cipher(cls):
+        # Reinitialize cipher if the encryption key changes
+        if cls._cipher is None or cls._cipher.key != Config.ENCRYPTION_KEY:
+            if Config.ENCRYPTION_KEY:
+                cls._cipher = Fernet(Config.ENCRYPTION_KEY)
+            else:
+                raise ValueError("ENCRYPTION_KEY is not set or is invalid. Cannot initialize encryption components.")
+        return cls._cipher
+
+    @classmethod
+    def encrypt_data(cls, data):
+        cipher = cls.get_cipher()
+        return cipher.encrypt(data.encode()).decode()
+
+    @classmethod
+    def decrypt_data(cls, data):
+        cipher = cls.get_cipher()
+        return cipher.decrypt(data.encode()).decode()
+
 # Tool Initialization Functions
-
-def encrypt_data(data):
-    return cipher.encrypt(data.encode()).decode()
-
-def decrypt_data(data):
-    return cipher.decrypt(data.encode()).decode()
 
 def fetch_tools_from_db():
     if not os.path.exists('knotie.db'):
@@ -77,9 +88,6 @@ def extract_base_url_from_openapi_file(openapi_spec_path):
     if servers:
         return servers[0].get('url')
     return None
-
-import logging
-import yaml
 
 def load_openapi_spec(openapi_spec_path):
     """Load and validate the OpenAPI spec from a file."""
@@ -213,7 +221,6 @@ def extract_parameters_from_operation(operation_item):
     return parameters
 
 
-
 def initialize_tools():
     tools_from_db = fetch_tools_from_db()
     logger.info(f"step 1")
@@ -274,8 +281,8 @@ def get_tool_and_spec(tool_name):
             "description": tool[1],
             "class_name": tool[2],
             "openapi_spec": tool[3],
-            "sensitive_headers": decrypt_data(tool[4]) if tool[4] else None,
-            "sensitive_body": decrypt_data(tool[5]) if tool[5] else None
+            "sensitive_headers": EncryptionHelper.decrypt_data(tool[4]) if tool[4] else None,
+            "sensitive_body": EncryptionHelper.decrypt_data(tool[5]) if tool[5] else None
         }
     else:
         raise ValueError(f"Tool with name {tool_name} not found")
@@ -364,8 +371,6 @@ def call_api(tool_name, tool_parameters, operation_id, tool_headers, tool_body_p
         logger.error(f"Error during API call: {e}")
         return {"error": str(e)}
 
-
-
 def replace_sensitive_values(headers, body_parameters, tool_name):
     tool_info = get_tool_and_spec(tool_name)
 
@@ -384,5 +389,3 @@ def replace_sensitive_values(headers, body_parameters, tool_name):
             body_parameters[key] = sensitive_body[key]
 
     return headers, body_parameters
-
-
