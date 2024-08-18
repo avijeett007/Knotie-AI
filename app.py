@@ -363,7 +363,6 @@ def update_config():
     Config.update_dynamic_config()
     initialize_twilio_client()
     initialize_elevenlabs_client()
-    reinitialize_ai_clients()
     initialize_tools()
     return jsonify({"message": "Config updated successfully"}), 200
 
@@ -425,6 +424,7 @@ def audio_stream():
 @app.route('/start-call', methods=['POST'])
 def start_call():
     logger.info("Request recieved")
+    reinitialize_ai_clients()
     """Endpoint to initiate a call."""
     unique_id = str(uuid.uuid4())
     message_history = []
@@ -484,6 +484,7 @@ def gather_input_inbound():
     """Gathers customer's speech input for both inbound and outbound calls."""
     resp = VoiceResponse()
     print("Initializing for inbound call...")
+    reinitialize_ai_clients()
     unique_id = str(uuid.uuid4())
     message_history = []
     agent_response= initiate_inbound_message(unique_id)
