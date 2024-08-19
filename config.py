@@ -26,6 +26,7 @@ class Config:
     @classmethod
     def update_dynamic_config(cls):
         dynamic_config = cls.load_dynamic_config()
+        cls.USE_OPENAI_THREADS = dynamic_config.get('USE_OPENAI_THREADS', False)
         cls.COMPANY_NAME = dynamic_config.get('COMPANY_NAME', 'Default Company Name')
         cls.COMPANY_BUSINESS = dynamic_config.get('COMPANY_BUSINESS', 'Default Company Business')
         cls.COMPANY_PRODUCTS_SERVICES = dynamic_config.get('COMPANY_PRODUCTS_SERVICES', 'Default Products Services')

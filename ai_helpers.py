@@ -1,5 +1,12 @@
 # This code is licensed under the Custom License for Paid Community Members.
 # For more information, see the LICENSE file in the root directory of this repository.
+import time
+
+from openai import Stream
+from openai.lib.streaming import AssistantEventHandlerT
+from openai.resources.beta import Threads
+from openai.types.beta import Assistant
+
 from ConversationCache import CacheManager
 from ConversationCache.environment import Configuration
 from config import Config
@@ -22,9 +29,9 @@ import sys
 import os
 # Import tool-related functions
 from tools_helper import (
-    initialize_tools, 
-    get_tool_and_spec, 
-    call_api, 
+    initialize_tools,
+    get_tool_and_spec,
+    call_api,
     replace_sensitive_values,
     fetch_tools_from_db,
     initialized_tools
@@ -36,6 +43,7 @@ logger = logging.getLogger(__name__)
 
 # session ={} # Added for testing. remove after testing
 ai_api_key = Config.AI_API_KEY
+use_openai_threads = Config.USE_OPENAI_THREADS
 salesperson_name = Config.AISALESAGENT_NAME
 company_name = Config.COMPANY_NAME
 company_business = Config.COMPANY_BUSINESS
@@ -48,6 +56,10 @@ llm_model = Config.LLM_MODEL
 # In-memory storage for testing
 conversation_states = {}
 ai = None
+thread = None
+assistant = None
+run = None
+
 GENERATED_TOOLS_DIR = 'generated_tools/'
 
 if which_model == "GROQ":
@@ -71,14 +83,23 @@ elif which_model == "Anthropic":
         "max_tokens": 100,
     }
 
-
 # Example usage:
 initialize_tools()
 
 
+def _run_until_done():
+    global run, thread
+    while run.status in ['queued', 'in_progress', "cancelling"]:
+        time.sleep(0.05)
+        run = openai.beta.threads.runs.retrieve(
+            thread_id=thread.id,
+            run_id=run.id
+        )
+
+
 # Method added to reinitialize on updating from UI
 def reinitialize_ai_clients():
-    global ai
+    global ai, thread, assistant, run
     logger.info(f"Initiating AI client")
     if Config.WHICH_MODEL == "GROQ":
         ai = Groq(api_key=Config.AI_API_KEY)
@@ -88,7 +109,7 @@ def reinitialize_ai_clients():
             "max_tokens": 100,
             "stream": False,
             "top_p": 1
-        }        
+        }
     elif Config.WHICH_MODEL == "OpenAI" or Config.WHICH_MODEL == "OpenRouter":
         openai.api_key = Config.AI_API_KEY
         openai.base_url = Config.OPENAI_BASE_URL
@@ -97,6 +118,22 @@ def reinitialize_ai_clients():
             "temperature": 0.5,
             "max_tokens": 100,
         }
+        initial_prompt_template = get_prompt_template('AGENT_STARTING_PROMPT_TEMPLATE')
+        initial_prompt = initial_prompt_template.format(
+            salesperson_name=salesperson_name,
+            company_name=company_name,
+            company_business=company_business,
+            conversation_purpose=conversation_purpose,
+            conversation_stages=conversation_stages,
+            agent_custom_instructions=agent_custom_instructions
+        )
+        if use_openai_threads:
+            assistant = openai.beta.assistants.create(model=llm_model, temperature=0.5, instructions=initial_prompt)
+            thread = openai.beta.threads.create()
+            run = openai.beta.threads.runs.create(model=llm_model, assistant_id=assistant.id, thread_id=thread.id)
+        else:
+            pass
+
     elif Config.WHICH_MODEL == "Anthropic":
         ai = Anthropic(api_key=Config.AI_API_KEY)
         params = {
@@ -105,10 +142,13 @@ def reinitialize_ai_clients():
             "max_tokens": 100,
         }
 
+
 reinitialize_ai_clients()
+
 
 def gen_ai_output(prompt, isToolResponse):
     """Generate AI output based on the prompt."""
+    global run, thread
 
     print("model selected is: ", which_model)
 
@@ -120,8 +160,24 @@ def gen_ai_output(prompt, isToolResponse):
         if isToolResponse == "yes" and Config.OPENAI_FINE_TUNED_TOOLS_MODEL_ID:
             print(f"Fine tuned model selected for tool calling: {Config.OPENAI_FINE_TUNED_TOOLS_MODEL_ID}")
             params['model'] = Config.OPENAI_FINE_TUNED_TOOLS_MODEL_ID
-        response = openai.chat.completions.create(**params)
-        return response.choices[0].message.content
+        if thread is None:
+            response = openai.chat.completions.create(**params)
+            return response.choices[0].message.content
+        else:
+            for message in prompt:
+                openai.beta.threads.messages.create(
+                    thread_id=thread.id, role=message['role'], content=message['content']
+                )
+            openai.beta.threads.runs.poll(run_id=run.id, thread_id=thread.id)
+            _run_until_done()
+            messages = openai.beta.threads.messages.list(
+                thread_id=thread.id,
+                run_id=run.id,
+                limit=1,
+                order="desc"
+            )
+
+            return messages.data[-1].content[0].text.value
     if which_model == "GROQ":
         params["messages"] = prompt
         response = ai.chat.completions.create(**params)
@@ -185,12 +241,21 @@ def process_initial_message(call_sid, customer_name, customer_problem):
         conversation_stages=conversation_stages,
         agent_custom_instructions=agent_custom_instructions
     )
-    message_to_send_to_ai = [
-        {
-            "role": "system",
-            "content": initial_prompt
-        }
-    ]
+
+    if run is not None:
+        message_to_send_to_ai = [
+            {
+                "role": "assistant",
+                "content": initial_prompt
+            }
+        ]
+    else:
+        message_to_send_to_ai = [
+            {
+                "role": "system",
+                "content": initial_prompt
+            }
+        ]
     initial_transcript = "Customer Name:" + customer_name + ". Customer filled up details in the website:" + customer_problem
     message_to_send_to_ai.append({"role": "user", "content": initial_transcript})
     # Initialize conversation state for the customer
@@ -201,6 +266,7 @@ def process_initial_message(call_sid, customer_name, customer_problem):
     response = gen_ai_output(message_to_send_to_ai, isToolResponse)
     return response
 
+
 def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_id):
     tools_from_db = fetch_tools_from_db()
     tools_description = ""
@@ -208,7 +274,7 @@ def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_i
     for tool in tools_from_db:
         tool_name = tool['name']
         tool_description = f"{tool_name}: {tool['description']}\nAvailable Operations:\n"
-        
+
         operation_ids = initialized_tools[tool_name]['operations']
 
         for operation_id, operation_details in operation_ids.items():
@@ -263,29 +329,49 @@ def invoke_stage_tool_analysis(message_history, user_input, conversation_stage_i
 
         tools_description += tool_description + "\n"
     intent_tool_prompt_template = get_prompt_template('STAGE_TOOL_ANALYZER_PROMPT')
-    intent_tool_prompt = intent_tool_prompt_template.format(
-        salesperson_name=salesperson_name,
-        company_name=company_name,
-        company_business=company_business,
-        conversation_purpose=conversation_purpose,
-        conversation_stage_id=conversation_stage_id,
-        conversation_stages=conversation_stages,
-        conversation_history=message_history,
-        company_products_services=company_products_services,
-        user_input=user_input,
-        tools=tools_description
-    )
+
+
+
+    if thread is not None:
+        intent_tool_prompt = intent_tool_prompt_template.format(
+            salesperson_name=salesperson_name,
+            company_name=company_name,
+            company_business=company_business,
+            conversation_purpose=conversation_purpose,
+            conversation_stage_id=conversation_stage_id,
+            conversation_stages=conversation_stages,
+            conversation_history=[],
+            company_products_services=company_products_services,
+            user_input=user_input,
+            tools=tools_description
+        )
+    else:
+        intent_tool_prompt = intent_tool_prompt_template.format(
+            salesperson_name=salesperson_name,
+            company_name=company_name,
+            company_business=company_business,
+            conversation_purpose=conversation_purpose,
+            conversation_stage_id=conversation_stage_id,
+            conversation_stages=conversation_stages,
+            conversation_history=message_history,
+            company_products_services=company_products_services,
+            user_input=user_input,
+            tools=tools_description
+        )
 
     print("Prompt being sent to AI:" + intent_tool_prompt)
-    
+
     message_to_send_to_ai = [
         {
             "role": "system",
             "content": intent_tool_prompt
         }
     ]
+
     message_to_send_to_ai.append(
-        {"role": "user", "content": "You Must Respond in the JSON format specified in the system prompt"})
+        {"role": "user", "content": "You Must Respond in the JSON format specified in the system prompt"}
+    )
+
     isToolResponse = "yes"
     ai_output = gen_ai_output(message_to_send_to_ai, isToolResponse)
     print("AI Tool Model Output:" + ai_output)
@@ -305,6 +391,7 @@ def initiate_inbound_message(call_sid):
 
 
 def process_message(call_sid, message_history, user_input):
+    global thread
     conversation_state = conversation_states.get(call_sid)
     conversation_stage_id = conversation_state['conversation_stage_id']
     if not conversation_state:
@@ -319,9 +406,11 @@ def process_message(call_sid, message_history, user_input):
     try:
         if is_tool_required(stage_tool_output):
             print('Tool Required is true')
-            tool_name, operation_id, tool_parameters, tool_headers, tool_body_parameters = get_tool_details(stage_tool_output)
-            print(f'Tool called: {tool_name}, Operation: {operation_id}, Params: {tool_parameters}, tool_headers: {tool_headers}, tool_body_parameters: {tool_body_parameters}')
-            
+            tool_name, operation_id, tool_parameters, tool_headers, tool_body_parameters = get_tool_details(
+                stage_tool_output)
+            print(
+                f'Tool called: {tool_name}, Operation: {operation_id}, Params: {tool_parameters}, tool_headers: {tool_headers}, tool_body_parameters: {tool_body_parameters}')
+
             # Use the dynamically loaded tool if available
             if tool_name in initialized_tools:
                 api_response = call_api(tool_name, tool_parameters, operation_id, tool_headers, tool_body_parameters)
@@ -333,17 +422,31 @@ def process_message(call_sid, message_history, user_input):
 
     print("Creating inbound prompt template")
     outbound_prompt_template = get_prompt_template('AGENT_PROMPT_OUTBOUND_TEMPLATE')
-    inbound_prompt = outbound_prompt_template.format(
-        salesperson_name=salesperson_name,
-        company_name=company_name,
-        company_business=company_business,
-        conversation_purpose=conversation_purpose,
-        conversation_stage_id=conversation_stage_id,
-        company_products_services=company_products_services,
-        conversation_stages=json.dumps(conversation_stages, indent=2),
-        conversation_history=json.dumps(message_history, indent=2),
-        tools_response=tool_output
-    )
+    if thread is not None:
+        inbound_prompt = outbound_prompt_template.format(
+            salesperson_name=salesperson_name,
+            company_name=company_name,
+            company_business=company_business,
+            conversation_purpose=conversation_purpose,
+            conversation_stage_id=conversation_stage_id,
+            company_products_services=company_products_services,
+            conversation_stages=json.dumps(conversation_stages, indent=2),
+            conversation_history="",
+            tools_response=tool_output
+        )
+    else:
+        inbound_prompt = outbound_prompt_template.format(
+            salesperson_name=salesperson_name,
+            company_name=company_name,
+            company_business=company_business,
+            conversation_purpose=conversation_purpose,
+            conversation_stage_id=conversation_stage_id,
+            company_products_services=company_products_services,
+            conversation_stages=json.dumps(conversation_stages, indent=2),
+            conversation_history=json.dumps(message_history, indent=2),
+            tools_response=tool_output
+        )
+
     message_to_send_to_ai_final = [
         {
             "role": "system",
@@ -366,4 +469,3 @@ def process_message(call_sid, message_history, user_input):
     else:
         talkback_response = gen_ai_output(message_to_send_to_ai_final, isToolResponse)
         return talkback_response
-
