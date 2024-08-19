@@ -58,7 +58,6 @@ class CacheManager:
             self.connection.commit()
         except sqlite3.OperationalError as e:
             print("SQLite Operational Error:", e)
-
         cursor.close()
 
     def get(self, user_input: str):
@@ -69,8 +68,6 @@ class CacheManager:
         except sqlite3.OperationalError as e:
             print("SQLite Operational Error:", e)
             result = None  # Return None or an empty result on error
-
-
         cursor.close()
         return result
 
