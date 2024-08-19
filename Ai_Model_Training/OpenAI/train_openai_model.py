@@ -7,11 +7,11 @@ import os
 import time
 
 # Initialize the OpenAI client
-client = OpenAI(api_key='Your API KEY here..')
+client = OpenAI(api_key='Enter Your OpenAI API Key Here...')
 
 # Path to your local JSONL dataset file
-dataset_path = './BHealthy/BHealthy_data.jsonl'
-# dataset_path = './BHealthy/BHealth_tool_calling_data.jsonl'
+# dataset_path = './BHealthy/BHealthy_data.jsonl'
+dataset_path = './BHealthy/BHealth_tool_calling_data.jsonl'
 # Load the dataset
 with open(dataset_path, 'r', encoding='utf-8') as f:
     dataset = [json.loads(line) for line in f]
@@ -137,7 +137,7 @@ print(f"By default, you'll train for {n_epochs} epochs on this dataset")
 print(f"By default, you'll be charged for ~{n_epochs * n_billing_tokens_in_dataset} tokens")
 
 # Function to estimate cost
-def estimate_cost(total_tokens, epochs, cost_per_token=0.00006):  # Example cost per token
+def estimate_cost(total_tokens, epochs, cost_per_token=0.000003):  # Example cost per token
     return total_tokens * epochs * cost_per_token
 
 # Function to upload the dataset
@@ -151,7 +151,7 @@ def upload_dataset(file_path):
     return file_id
 
 # Function to create a fine-tuning job
-def create_fine_tuning_job(file_id, model_name='gpt-3.5-turbo', epochs=10):
+def create_fine_tuning_job(file_id, model_name='gpt-4o-mini-2024-07-18', epochs=10):
     response = client.fine_tuning.jobs.create(
         training_file=file_id,
         model=model_name,
@@ -171,15 +171,23 @@ def monitor_fine_tuning_job(fine_tune_id):
     return response
 
 # Function to use the fine-tuned model
-def use_fine_tuned_model(model_name, prompt, max_tokens=150):
-    response = client.completions.create(
-        model=model_name,
-        prompt=prompt,
-        max_tokens=max_tokens
-    )
-    print(response.choices[0].text)
-    return response.choices[0].text
 
+def use_fine_tuned_model(model_name, prompt, max_tokens=150):
+    try:
+        response = client.ChatCompletion.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=max_tokens
+        )
+        print(response['choices'][0]['message']['content'])
+        return response['choices'][0]['message']['content']
+    except Exception as e:
+        print(f"Error using fine-tuned model: {e}")
+        return None
+    
 # Function to calculate dataset tokens
 def calculate_dataset_tokens(file_path):
     total_tokens = 0
@@ -226,7 +234,7 @@ def main():
     if response.status == 'succeeded':
         # Use the fine-tuned model
         fine_tuned_model = response.fine_tuned_model
-        prompt = "Your custom prompt here"
+        prompt = "I want to build some muscle and loose belly fat"
         use_fine_tuned_model(fine_tuned_model, prompt)
     else:
         print("Fine-tuning job did not succeed.")
