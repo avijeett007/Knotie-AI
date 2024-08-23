@@ -15,6 +15,7 @@ from tools_helper import initialize_tools, EncryptionHelper
 from appUtils import clean_response, delayed_delete, save_message_history, get_message_history, process_elevenlabs_audio
 from prompts import AGENT_STARTING_PROMPT_TEMPLATE, STAGE_TOOL_ANALYZER_PROMPT, AGENT_PROMPT_OUTBOUND_TEMPLATE, \
     AGENT_PROMPT_INBOUND_TEMPLATE
+from openai_assistant_helpers import gen_ai_output_stream
 from config import Config
 import logging
 import threading
@@ -127,6 +128,14 @@ def init_sqlite_db():
         if cursor.fetchone() is None:
             cursor.execute('''INSERT INTO prompts (name, template) VALUES (?, ?)''', (name, template))
             conn.commit()
+    
+     # Create prompts table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS assistants (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        assistant_id TEXT UNIQUE NOT NULL,
+                        conversation_id TEXT,
+                        thread_id TEXT);''')
+    conn.commit()
     conn.close()
 
 init_sqlite_db()
@@ -363,6 +372,7 @@ def update_config():
     Config.update_dynamic_config()
     initialize_twilio_client()
     initialize_elevenlabs_client()
+    reinitialize_ai_clients()
     initialize_tools()
     return jsonify({"message": "Config updated successfully"}), 200
 
@@ -424,7 +434,6 @@ def audio_stream():
 @app.route('/start-call', methods=['POST'])
 def start_call():
     logger.info("Request recieved")
-    reinitialize_ai_clients()
     """Endpoint to initiate a call."""
     unique_id = str(uuid.uuid4())
     message_history = []
@@ -432,6 +441,11 @@ def start_call():
     customer_name = data.get('customer_name', 'Valued Customer')
     customer_phonenumber = data.get('customer_phonenumber', '')
     customer_businessdetails = data.get('customer_businessdetails', 'No details provided.')
+    # if use_openai_threads is true, then create the thread. call create_thread method which returns thread_id. 
+    # assistant_id is global. use it to stream the response and then redirect to gather api as usual with call_sid and thread_id
+    # Otherwise, use the normal AI mode and continue with the process below. 
+
+
     # Call AI_Helpers with customer_name, customer_businessdetails to create the initial response and return the response
     ai_message=process_initial_message(unique_id,customer_name,customer_businessdetails)
     response = VoiceResponse()
@@ -484,7 +498,6 @@ def gather_input_inbound():
     """Gathers customer's speech input for both inbound and outbound calls."""
     resp = VoiceResponse()
     print("Initializing for inbound call...")
-    reinitialize_ai_clients()
     unique_id = str(uuid.uuid4())
     message_history = []
     agent_response= initiate_inbound_message(unique_id)
@@ -504,6 +517,40 @@ def gather_input_inbound():
     save_message_history(unique_id, message_history)
     resp.redirect(url_for('gather_input', CallSid=unique_id))
     return str(resp)
+
+### WIP ###
+@app.route('/process-assistant-speech', methods=['POST'])
+def process_assistant_speech():
+    """Processes customer's speech input and generates a response."""
+    
+    speech_result = request.values.get('SpeechResult', '').strip()
+    call_sid = request.args.get('CallSid', 'default_sid')
+    message_history = get_message_history(call_sid)
+
+    # Start generating the AI response and stream it to Twilio in real-time
+    audio_stream_generator = gen_ai_output_stream(thread_id=thread.id, assistant_id=assistant.id)
+    
+    resp = VoiceResponse()
+
+    if config_data.get("VOICE_MODE") == "ELEVENLABS_STREAM":
+        def generate_audio():
+            for chunk in audio_stream_generator:
+                yield chunk
+
+        # Play the generated audio stream as it becomes available
+        resp.play(Response(generate_audio(), mimetype="audio/mpeg"))
+    elif config_data.get("VOICE_MODE") == "TWILIO_DIRECT":
+        response_text = clean_response(ai_response_text)
+        resp.say(response_text, voice='Google.en-GB-Standard-C', language='en-US')
+
+    if "<END_OF_CALL>" in ai_response_text:
+        resp.hangup()
+
+    # Redirect to gather input again for further conversation
+    resp.redirect(url_for('gather_input', CallSid=call_sid))
+    return str(resp)
+
+
 
 @app.route('/process-speech', methods=['POST'])
 def process_speech():

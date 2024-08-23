@@ -118,6 +118,14 @@ def reinitialize_ai_clients():
             "temperature": 0.5,
             "max_tokens": 100,
         }
+    elif Config.WHICH_MODEL == "Anthropic":
+        ai = Anthropic(api_key=Config.AI_API_KEY)
+        params = {
+            "model": llm_model,
+            "temperature": 0.5,
+            "max_tokens": 100,
+        }
+    if use_openai_threads:
         initial_prompt_template = get_prompt_template('AGENT_STARTING_PROMPT_TEMPLATE')
         initial_prompt = initial_prompt_template.format(
             salesperson_name=salesperson_name,
@@ -127,22 +135,11 @@ def reinitialize_ai_clients():
             conversation_stages=conversation_stages,
             agent_custom_instructions=agent_custom_instructions
         )
-        if use_openai_threads:
-            assistant = openai.beta.assistants.create(model=llm_model, temperature=0.5, instructions=initial_prompt)
-            thread = openai.beta.threads.create()
-            run = openai.beta.threads.runs.create(model=llm_model, assistant_id=assistant.id, thread_id=thread.id)
-        else:
-            pass
-
-    elif Config.WHICH_MODEL == "Anthropic":
-        ai = Anthropic(api_key=Config.AI_API_KEY)
-        params = {
-            "model": llm_model,
-            "temperature": 0.5,
-            "max_tokens": 100,
-        }
-
-
+        assistant = openai.beta.assistants.create(model=llm_model, temperature=0.5, instructions=initial_prompt)
+        thread = openai.beta.threads.create()
+        run = openai.beta.threads.runs.create(model=llm_model, assistant_id=assistant.id, thread_id=thread.id)
+    else:
+        pass
 reinitialize_ai_clients()
 
 
