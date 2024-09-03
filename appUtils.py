@@ -5,6 +5,8 @@ import json
 import threading
 import os
 from audio_helpers import text_to_speech, save_audio_file
+import random
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -44,3 +46,20 @@ def process_elevenlabs_audio(initial_message):
     audio_file_path = save_audio_file(audio_data)
     audio_filename = os.path.basename(audio_file_path)
     return audio_filename
+
+def generate_diverse_confirmation(speech_result):
+    """Generates a diverse confirmation message based on the user's input."""
+    confirmation_prompts = [
+        f"Just to make sure I heard you correctly, you said '{speech_result}'. Is that right?",
+        f"I think I got that. You mentioned '{speech_result}'. Did I understand correctly?",
+        f"Let me double-check. You said '{speech_result}', correct?",
+        f"I want to ensure I understood you properly. You said '{speech_result}', right?",
+        f"To avoid any misunderstanding, can you confirm you said '{speech_result}'?",
+        f"I'd like to confirm something. Did you mean to say '{speech_result}'?",
+        f"Before we continue, I just want to verify. You said '{speech_result}', didn't you?",
+        f"I believe I heard '{speech_result}'. Am I on the right track?",
+        f"Quick check - did you say '{speech_result}'?",
+        f"I want to make sure we're on the same page. You mentioned '{speech_result}', correct?"
+    ]
+    
+    return random.choice(confirmation_prompts)

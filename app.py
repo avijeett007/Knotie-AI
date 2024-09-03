@@ -12,9 +12,12 @@ import requests
 from audio_helpers import text_to_speech, text_to_speech_stream, save_audio_file, initialize_elevenlabs_client
 from ai_helpers import process_initial_message, process_message, initiate_inbound_message, reinitialize_ai_clients
 from tools_helper import initialize_tools, EncryptionHelper
-from appUtils import clean_response, delayed_delete, save_message_history, get_message_history, process_elevenlabs_audio
+from appUtils import clean_response, delayed_delete, save_message_history, get_message_history, process_elevenlabs_audio, generate_diverse_confirmation
 from prompts import AGENT_STARTING_PROMPT_TEMPLATE, STAGE_TOOL_ANALYZER_PROMPT, AGENT_PROMPT_OUTBOUND_TEMPLATE, \
     AGENT_PROMPT_INBOUND_TEMPLATE
+import random
+import threading
+import queue
 from config import Config
 import logging
 import threading
@@ -469,12 +472,22 @@ def start_call():
     )
     return jsonify({'message': 'Call initiated', 'call_sid': call.sid})
 
+# @app.route('/gather', methods=['GET', 'POST'])
+# def gather_input():
+#     """Endpoint to gather customer's speech input."""
+#     call_sid = request.args.get('CallSid', 'default_sid')
+#     resp = VoiceResponse()
+#     gather = Gather(input='speech', action=url_for('process_speech', CallSid=call_sid), speechTimeout='auto', method="POST")
+#     resp.append(gather)
+#     resp.redirect(url_for('gather_input', CallSid=call_sid))  # Redirect to itself to keep gathering if needed
+#     return str(resp)
+
 @app.route('/gather', methods=['GET', 'POST'])
 def gather_input():
     """Endpoint to gather customer's speech input."""
     call_sid = request.args.get('CallSid', 'default_sid')
     resp = VoiceResponse()
-    gather = Gather(input='speech', action=url_for('process_speech', CallSid=call_sid), speechTimeout='auto', method="POST")
+    gather = Gather(input='speech', action=url_for('process_speech_with_confirmation', CallSid=call_sid), speechTimeout='auto', method="POST")
     resp.append(gather)
     resp.redirect(url_for('gather_input', CallSid=call_sid))  # Redirect to itself to keep gathering if needed
     return str(resp)
@@ -503,6 +516,101 @@ def gather_input_inbound():
     save_message_history(unique_id, message_history)
     resp.redirect(url_for('gather_input', CallSid=unique_id))
     return str(resp)
+
+@app.route('/process-speech-with-confirmation', methods=['POST'])
+def process_speech_with_confirmation(call_sid):
+    """Processes customer's speech input with a confirmation step."""
+    speech_result = request.values.get('SpeechResult', '').strip()
+    message_history = get_message_history(call_sid)
+
+    # Step 1: Start preprocessing in parallel
+    preprocessing_queue = queue.Queue()
+    preprocessing_thread = threading.Thread(target=preprocess_input, args=(call_sid, message_history, speech_result, preprocessing_queue))
+    preprocessing_thread.start()
+
+    # Step 2: Confirm understanding
+    confirmation_response = generate_diverse_confirmation(speech_result)
+    play_response(confirmation_response)
+
+    # Step 3: Gather user confirmation
+    confirmation = gather_confirmation()
+
+    if confirmation.lower() in ['yes', 'correct', "that's right", 'yeah', 'yup', 'hmm', 'okay', 'sure', 'absolutely', 'definitely']:
+        # If confirmed, wait for preprocessing to complete
+        preprocessing_thread.join()
+        ai_response = preprocessing_queue.get()
+    else:
+        # If not confirmed, cancel preprocessing and restart
+        preprocessing_thread.join()  # Wait for thread to finish
+        return process_speech_with_confirmation(call_sid)  # Recursive call to restart
+
+    # Play the AI response
+    play_response(ai_response)
+
+    # Update message history
+    message_history.append({"role": "user", "content": speech_result})
+    message_history.append({"role": "assistant", "content": ai_response})
+    save_message_history(call_sid, message_history)
+
+    return handle_call_continuation(call_sid, ai_response)
+
+def gather_confirmation():
+    """Gathers user's confirmation of the understood input."""
+    resp = VoiceResponse()
+    gather = Gather(input='speech', timeout=3, action='/process_confirmation')
+    gather.say("Please confirm if that's correct.")
+    resp.append(gather)
+    return str(resp)
+
+def preprocess_input(call_sid, message_history, speech_result, queue):
+    """Preprocesses the input and generates AI response."""
+    ai_response = process_message(call_sid, message_history, speech_result)
+    queue.put(ai_response)
+
+def play_response(response):
+    """Plays the response using the configured voice mode."""
+    resp = VoiceResponse()
+    if Config.VOICE_MODE == "ELEVENLABS_DIRECT":
+        audio_filename = process_elevenlabs_audio(response)
+        resp.play(url_for('serve_audio', filename=secure_filename(audio_filename), _external=True))
+    elif Config.VOICE_MODE == "ELEVENLABS_STREAM":
+        audio_url = url_for('audio_stream', text=response, _external=True)
+        resp.play(audio_url)
+    elif Config.VOICE_MODE == "TWILIO_DIRECT":
+        resp.say(response, voice='Google.en-GB-Standard-C', language='en-US')
+    return str(resp)
+
+def handle_call_continuation(call_sid, ai_response):
+    """Handles the continuation of the call after processing speech."""
+    resp = VoiceResponse()
+    if "<END_OF_CALL>" in ai_response:
+        resp.hangup()
+    else:
+        resp.redirect(url_for('gather_input', CallSid=call_sid))
+    return str(resp)
+
+@app.route('/process_confirmation', methods=['POST'])
+def process_confirmation():
+    """Processes the user's confirmation of the understood input."""
+    confirmation = request.values.get('SpeechResult', '').strip().lower()
+    call_sid = request.values.get('CallSid')
+    
+    positive_responses = ['yes', 'correct', "that's right", 'yeah', 'yup', 'hmm', 'okay', 'sure', 'absolutely', 'definitely']
+    negative_responses = ['no', 'incorrect', 'wrong', 'nope', 'not quite', 'not really']
+    
+    if any(word in confirmation for word in positive_responses):
+        return process_speech_with_confirmation(call_sid)
+    elif any(word in confirmation for word in negative_responses):
+        resp = VoiceResponse()
+        resp.say("I apologize for the misunderstanding. Let's try that again.")
+        resp.redirect(url_for('gather_input', CallSid=call_sid))
+        return str(resp)
+    else:
+        # If the response is unclear, ask for clarification
+        resp = VoiceResponse()
+        resp.say("I'm sorry, I didn't quite catch that. Could you please say 'yes' if I understood correctly, or 'no' if I didn't?")
+        resp.redirect(url_for('process_confirmation', CallSid=call_sid))
+        return str(resp)
 
 @app.route('/process-speech', methods=['POST'])
 def process_speech():
