@@ -7,6 +7,7 @@ services:
     build: .
     ports:
       - "5000:5000"
+    image: avijeett007/knotie-ai-web:latest
     volumes:
       - .:/usr/src/app
       - ./audio_files:/usr/src/app/audio_files

@@ -12,7 +12,7 @@ import requests
 from audio_helpers import text_to_speech, text_to_speech_stream, save_audio_file, initialize_elevenlabs_client
 from ai_helpers import process_initial_message, process_message, initiate_inbound_message, reinitialize_ai_clients
 from tools_helper import initialize_tools, EncryptionHelper
-from appUtils import clean_response, delayed_delete, save_message_history, get_message_history, process_elevenlabs_audio, generate_diverse_confirmation
+from appUtils import clean_response, delayed_delete, save_message_history, get_message_history, process_elevenlabs_audio, generate_diverse_confirmation, get_redis_client
 from prompts import AGENT_STARTING_PROMPT_TEMPLATE, STAGE_TOOL_ANALYZER_PROMPT, AGENT_PROMPT_OUTBOUND_TEMPLATE, \
     AGENT_PROMPT_INBOUND_TEMPLATE
 from config import Config
@@ -31,7 +31,6 @@ import re
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-redis_client = redis.Redis(host='redis', port=6379, db=0, decode_responses=True)
 OPENAPI_DIR = 'openapi_specs/'
 # Define the directory for storing generated tools
 GENERATED_TOOLS_DIR = 'generated_tools/'
@@ -45,10 +44,9 @@ app.config.from_object(Config)
 app.config['SESSION_TYPE'] = 'redis'
 app.config['SESSION_PERMANENT'] = False  # You can set True for permanent sessions
 app.config['SESSION_USE_SIGNER'] = True  # Securely sign the session
-app.config['SESSION_REDIS'] = redis.from_url('redis://redis:6379')
+app.config['SESSION_REDIS'] = get_redis_client()
 Session(app)
 app.logger.setLevel(logging.DEBUG)
-redis_client = redis.Redis(host='redis', port=6379, db=0, decode_responses=True)
 
 # Path to the configuration file
 config_path = 'config.json'
@@ -374,6 +372,7 @@ def get_chats():
         return jsonify({"error": "Not logged in"}), 403
 
     # Fetch all keys (transaction IDs) from Redis
+    redis_client = get_redis_client() 
     keys = redis_client.keys('*')
     logger.info(f"list of keys are:  {keys}")
     return jsonify(keys)
@@ -545,6 +544,7 @@ def process_speech():
 def generate_response_in_background(call_sid, message_history, user_input):
     """Generate AI response in the background while awaiting confirmation."""
     # Preprocess the next response while waiting for confirmation
+    redis_client = get_redis_client()  
     ai_response_text = process_message(call_sid, message_history, user_input)
 
     # Store the preprocessed response in Redis
@@ -580,7 +580,7 @@ def process_confirmation():
     # Fetch message history
     message_history = get_message_history(call_sid)
 
-        # Define lists of positive and negative keywords
+    # Define lists of positive and negative keywords
     positive_keywords = ["yes", "correct", "you're right", "ahha", "that's right", "right", "yeah", "yep", "affirmative", "sure", "absolutely", "indeed", "aha", "uh-huh", "mmm", "okay", "ok", "alright", "got it"]
     negative_keywords = ["no", "incorrect", "that's wrong", "wrong", "nope", "not quite", "negative", "not really", "no way", "uh-oh", "nah", "hmm", "huh-uh"]
 
@@ -588,21 +588,25 @@ def process_confirmation():
     if any(keyword in confirmation_result for keyword in positive_keywords):
         # User confirmed the AI's understanding
         logger.info(f'User confirmed yes')
+        redis_client = get_redis_client()  
         # Attempt to fetch the preprocessed AI response from Redis
-        ai_response_text = redis_client.get(f"response:{call_sid}")
+        ai_response_bytes = redis_client.get(f"response:{call_sid}")
 
         # If the response is not ready yet, wait for a short period
         wait_time = 0  # Initialize wait time counter
         max_wait_time = 10  # Maximum time to wait in seconds
 
-        while ai_response_text is None and wait_time < max_wait_time:
+        while ai_response_bytes is None and wait_time < max_wait_time:
             logger.info(f'waiting for response from AI')
             time.sleep(1)  # Wait for 1 second
             wait_time += 1
-            ai_response_text = redis_client.get(f"response:{call_sid}")  # Re-check if the response is ready
+            ai_response_bytes = redis_client.get(f"response:{call_sid}")  # Re-check if the response is ready
 
         # Handle if the response is still not available after waiting
-        if ai_response_text:
+        if ai_response_bytes:
+            # Decode the bytes object to a string
+            ai_response_text = ai_response_bytes.decode('utf-8')
+            
             # Play the response using ElevenLabs
             response_text = clean_response(ai_response_text)
             audio_url = url_for('audio_stream', text=response_text, _external=True)
@@ -642,6 +646,7 @@ def process_confirmation():
         resp.append(gather)
 
     return str(resp)
+
 
 
 @app.route('/event', methods=['POST'])

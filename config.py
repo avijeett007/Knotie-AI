@@ -7,9 +7,13 @@ import logging
 load_dotenv()
 logger = logging.getLogger(__name__)
 
+
 class Config:
     # Static config from environment variables
     SECRET_KEY = os.getenv('SECRET_KEY')
+
+    # Store the last loaded config timestamp
+    last_loaded_timestamp = None
 
     @staticmethod
     def load_dynamic_config():
@@ -22,6 +26,16 @@ class Config:
     def initialize(cls):
         cls.dynamic_config = cls.load_dynamic_config()
         cls.update_dynamic_config()
+
+    @classmethod
+    def reload_if_changed(cls):
+        """Reload the configuration if the config file has changed."""
+        current_timestamp = os.path.getmtime('config.json')
+        if current_timestamp != cls.last_loaded_timestamp:
+            cls.last_loaded_timestamp = current_timestamp
+            cls.dynamic_config = cls.load_dynamic_config()
+            cls.update_dynamic_config()
+            logger.info("Configuration reloaded.")
 
     @classmethod
     def update_dynamic_config(cls):
@@ -52,6 +66,8 @@ class Config:
         cls.APP_PUBLIC_GATHER_URL = f"{cls.APP_PUBLIC_URL}/gather"
         cls.APP_PUBLIC_EVENT_URL = f"{cls.APP_PUBLIC_URL}/event"
         cls.CACHE_ENABLED = dynamic_config.get('CACHE_ENABLED', False)
+        cls.REDIS_URL = dynamic_config.get('REDIS_URL', 'redis://redis:6379')  # Set default to local Redis
+
     @classmethod
     def validate_encryption_key(cls):
         if cls.ENCRYPTION_KEY and cls.ENCRYPTION_KEY != "Enter a strong ENCRYPTION_KEY":

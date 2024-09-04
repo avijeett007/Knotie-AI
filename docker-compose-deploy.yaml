@@ -4,7 +4,7 @@
 version: '3.8'
 services:
   web:
-    image: avijeett007/knotie-ai-web:release-1.0
+    image: avijeett007/knotie-ai-web:latest
     ports:
       - "5000:5000"
     volumes:
