@@ -4,13 +4,29 @@ import redis
 import json
 import threading
 import os
-from audio_helpers import text_to_speech, save_audio_file
 import random
-
+from config import Config  # Import Config to access dynamic configuration
+from audio_helpers import text_to_speech, save_audio_file
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-redis_client = redis.Redis(host='redis', port=6379, db=0, decode_responses=True)
+
+# Initialize the Redis client (placeholder)
+redis_client = None
+
+def get_redis_client():
+    """Get or reinitialize the Redis client with the latest configuration."""
+    global redis_client
+
+    # Reload the configuration if there are any changes
+    Config.reload_if_changed()
+
+    # If Redis client is not initialized or URL has changed, reinitialize
+    if not redis_client or redis_client.connection_pool.connection_kwargs['host'] != Config.REDIS_URL:
+        redis_client = redis.Redis.from_url(Config.REDIS_URL, decode_responses=False)
+        logger.info(f"Reinitialized Redis client with new URL: {Config.REDIS_URL}")
+    
+    return redis_client
 
 def clean_response(unfiltered_response_text):
     # Check for specific substrings in the response text
@@ -35,9 +51,11 @@ def delayed_delete(filename, delay=5):
 
 def save_message_history(call_sid, message_history):
     logger.info(f"Inside save message history")
+    redis_client = get_redis_client()  # Get the latest Redis client
     redis_client.set(call_sid, json.dumps(message_history))
 
 def get_message_history(call_sid):
+    redis_client = get_redis_client()  # Get the latest Redis client
     message_history_json = redis_client.get(call_sid)
     return json.loads(message_history_json) if message_history_json else []
 
