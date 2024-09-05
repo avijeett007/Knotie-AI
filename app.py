@@ -49,19 +49,19 @@ Session(app)
 app.logger.setLevel(logging.DEBUG)
 
 # Path to the configuration file
-config_path = 'config.json'
+# config_path = 'config.json'
 
 
-# Load configuration from JSON file
-def load_config():
-    if os.path.exists(config_path):
-        with open(config_path) as config_file:
-            return json.load(config_file)
-    else:
-        return {}  # Return an empty config if the file doesn't exist
+# # Load configuration from JSON file
+# def load_config():
+#     if os.path.exists(config_path):
+#         with open(config_path) as config_file:
+#             return json.load(config_file)
+#     else:
+#         return {}  # Return an empty config if the file doesn't exist
 
-# Global variable to hold the configuration
-config_data = load_config()
+# # Global variable to hold the configuration
+# config_data = load_config()
 
 def is_valid_tool_name(tool_name):
     """Validate the tool name to prevent directory traversal or other path manipulation."""
@@ -74,14 +74,15 @@ def init_sqlite_db():
     # Initialize user database
     conn = sqlite3.connect('knotie.db')
     cursor = conn.cursor()
+    
+    # Create users table
     cursor.execute('''CREATE TABLE IF NOT EXISTS users (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         username TEXT UNIQUE NOT NULL,
                         password TEXT NOT NULL,
                         first_login INTEGER DEFAULT 1)''')
-    
     conn.commit()
-    
+
     # Check if admin user exists, if not, create one
     cursor.execute('SELECT * FROM users WHERE username = "admin"')
     if cursor.fetchone() is None:
@@ -96,6 +97,7 @@ def init_sqlite_db():
                         content TEXT NOT NULL)''')
     conn.commit()
 
+    # Create tools table
     cursor.execute('''CREATE TABLE IF NOT EXISTS tools (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT UNIQUE NOT NULL,
@@ -105,8 +107,8 @@ def init_sqlite_db():
                         sensitive_headers TEXT,
                         sensitive_body TEXT)''')
     conn.commit()
- 
-     # Create prompts table
+
+    # Create prompts table
     cursor.execute('''CREATE TABLE IF NOT EXISTS prompts (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT UNIQUE NOT NULL,
@@ -126,6 +128,49 @@ def init_sqlite_db():
         if cursor.fetchone() is None:
             cursor.execute('''INSERT INTO prompts (name, template) VALUES (?, ?)''', (name, template))
             conn.commit()
+
+    # Create config table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS config (
+                        key TEXT UNIQUE NOT NULL,
+                        value TEXT NOT NULL)''')
+    conn.commit()
+
+    # Insert default config values if they don't exist
+    default_configs = {
+        'COMPANY_NAME': 'Knolabs AI Agency',
+        'COMPANY_BUSINESS': 'Knolabs is an AI Agency which helps HomeService Businesses & Local Shops automate their business processes based on their need and necesity.',
+        'COMPANY_PRODUCTS_SERVICES': 'Premium Consultancy Service - Most Budget offer, where we only provide consultancy to businesses who have their own team of developers (charged hourly), Proven Solution Services - Implements Automated Solutions that are already implemented & Proven for existing clients (Charged Based on Solutions), Custom Solutions - AI Automated Solution which are unique to the business (Price Varies, Charged Based on Agreed Contract)',
+        'CONVERSATION_PURPOSE': 'Primarily to get an appointment booked to discuss problems of the customer in details',
+        'AISALESAGENT_NAME': 'Andrea',
+        'AI_API_KEY': 'Default AI API Key',
+        'ENCRYPTION_KEY': 'Default Encryption Key',
+        'WHICH_MODEL': 'OpenAI',
+        'OPENAI_BASE_URL': 'https://api.openai.com/v1/',
+        'VOICE_MODE': 'ELEVENLABS_STREAM',
+        'LLM_MODEL': 'gpt-3.5-turbo',
+        'OPENAI_FINE_TUNED_MODEL_ID': 'gpt-3.5-turbo',
+        'OPENAI_FINE_TUNED_TOOLS_MODEL_ID': 'gpt-4o-mini',
+        'USE_LANGCHAIN_TOOL_CLASS': 'false',
+        'AGENT_CUSTOM_INSTRUCTIONS': 'Ask and Answer in short sentences to be focused on providing right information and provide fastest way for make deal. Be specific and do not try to answer questions which are not specific to the goal or company info or details available in context',
+        'TWILIO_ACCOUNT_SID': 'Default Twilio SID',
+        'TWILIO_AUTH_TOKEN': 'Default Twilio Auth Token',
+        'TWILIO_FROM_NUMBER': 'Default Twilio Number',
+        'ELEVENLABS_API_KEY': 'Default Eleven Labs API Key',
+        'NGROK_AUTH_TOKEN': 'NGROK Default Auth Token',
+        'USE_NGROK': 'true',
+        'VOICE_ID': '21m00Tcm4TlvDq8ikWAM',
+        'APP_PUBLIC_URL': 'https://default-url.com',
+        'CACHE_ENABLED': 'false',
+        'REDIS_URL': 'redis://redis:6379'
+    }
+
+    # Insert default configs if not present
+    for key, value in default_configs.items():
+        cursor.execute('SELECT value FROM config WHERE key = ?', (key,))
+        if cursor.fetchone() is None:
+            cursor.execute('INSERT INTO config (key, value) VALUES (?, ?)', (key, value))
+            conn.commit()
+
     conn.close()
 
 init_sqlite_db()
@@ -335,17 +380,14 @@ def admin():
         return redirect(url_for('index'))
     return render_template('admin.html')
 
-# API endpoints for configuration
 @app.route('/api/config', methods=['GET'])
 def get_config():
     if 'logged_in' not in session:
         return jsonify({"error": "Not logged in"}), 403
 
-    global config_data
-    config_data = load_config()
-    if not config_data:
-        return jsonify({"error": "Configuration not set up"}), 404
-    return jsonify(config_data)
+    # Fetch all configurations from the database
+    configs = Config.load_dynamic_config()
+    return jsonify(configs)
 
 @app.route('/api/config', methods=['POST'])
 def update_config():
@@ -353,17 +395,18 @@ def update_config():
         return jsonify({"error": "Not logged in"}), 403
 
     new_config = request.json
-    with open(config_path, 'w') as config_file:
-        json.dump(new_config, config_file)
+    Config.save_dynamic_config(new_config)
+    # Save new configuration values to the database
+    # for key, value in new_config.items():
+    #     Config.save_dynamic_config(key, value)
 
-    global config_data
-    config_data = new_config
-    # Reload the configuration and reinitialize the Twilio client
-    Config.update_dynamic_config()
+    # Reload the configuration after updating
+    Config.initialize()
     initialize_twilio_client()
     initialize_elevenlabs_client()
     reinitialize_ai_clients()
     initialize_tools()
+
     return jsonify({"message": "Config updated successfully"}), 200
 
 @app.route('/api/chats', methods=['GET'])
@@ -435,15 +478,15 @@ def start_call():
     # Call AI_Helpers with customer_name, customer_businessdetails to create the initial response and return the response
     ai_message=process_initial_message(unique_id,customer_name,customer_businessdetails)
     response = VoiceResponse()
-    if config_data.get("VOICE_MODE") == "ELEVENLABS_DIRECT":
+    if Config.VOICE_MODE == "ELEVENLABS_DIRECT":
         initial_message=clean_response(ai_message)
         audio_filename = process_elevenlabs_audio(initial_message)
         response.play(url_for('serve_audio', filename=secure_filename(audio_filename), _external=True))
-    if config_data.get("VOICE_MODE") == "ELEVENLABS_STREAM":
+    if Config.VOICE_MODE == "ELEVENLABS_STREAM":
         initial_message=clean_response(ai_message)
         audio_url = url_for('audio_stream', text=initial_message, _external=True)
         response.play(audio_url)
-    if config_data.get("VOICE_MODE") == "TWILIO_DIRECT":
+    if Config.VOICE_MODE == "TWILIO_DIRECT":
         initial_message=clean_response(ai_message)
         response.say(initial_message, voice='Google.en-GB-Standard-C', language='en-US')
     
@@ -462,7 +505,7 @@ def start_call():
     call = client.calls.create(
         twiml=str(response),
         to=customer_phonenumber,
-        from_=config_data.get("TWILIO_FROM_NUMBER"),
+        from_=Config.TWILIO_FROM_NUMBER,
         method="GET",
         status_callback=public_url,
         status_callback_method="POST"
@@ -488,14 +531,14 @@ def gather_input_inbound():
     message_history = []
     agent_response= initiate_inbound_message(unique_id)
 
-    if config_data.get("VOICE_MODE") == "ELEVENLABS_DIRECT":
+    if Config.VOICE_MODE == "ELEVENLABS_DIRECT":
         audio_filename = process_elevenlabs_audio(agent_response)
         resp.play(url_for('serve_audio', filename=secure_filename(audio_filename), _external=True))
-    if config_data.get("VOICE_MODE") == "ELEVENLABS_STREAM":
+    if Config.VOICE_MODE == "ELEVENLABS_STREAM":
         initial_message=clean_response(agent_response)
         audio_url = url_for('audio_stream', text=agent_response, _external=True)
         resp.play(audio_url)
-    if config_data.get("VOICE_MODE") == "TWILIO_DIRECT":
+    if Config.VOICE_MODE == "TWILIO_DIRECT":
         initial_message=clean_response(agent_response)
         resp.say(agent_response, voice='Google.en-GB-Standard-C', language='en-US')
 
