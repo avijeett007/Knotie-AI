@@ -81,3 +81,4 @@ def generate_diverse_confirmation(speech_result):
     ]
     
     return random.choice(confirmation_prompts)
+
