@@ -1,12 +1,12 @@
 import os
 import json
 import base64
+import sqlite3
 from dotenv import load_dotenv
 import logging
 
 load_dotenv()
 logger = logging.getLogger(__name__)
-
 
 class Config:
     # Static config from environment variables
@@ -17,10 +17,33 @@ class Config:
 
     @staticmethod
     def load_dynamic_config():
-        if os.path.exists('config.json'):
-            with open('config.json') as config_file:
-                return json.load(config_file)
-        return {}
+        # Load configuration from the SQLite database
+        config_data = {}
+        try:
+            conn = sqlite3.connect('knotie.db')
+            cursor = conn.cursor()
+            cursor.execute('SELECT key, value FROM config')
+            rows = cursor.fetchall()
+            config_data = {row[0]: row[1] for row in rows}
+        except sqlite3.Error as e:
+            logger.error(f"Error loading config from database: {e}")
+        finally:
+            conn.close()
+        return config_data
+
+    @staticmethod
+    def save_dynamic_config(config_data):
+        # Save configuration to the SQLite database
+        try:
+            conn = sqlite3.connect('knotie.db')
+            cursor = conn.cursor()
+            for key, value in config_data.items():
+                cursor.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', (key, value))
+            conn.commit()
+        except sqlite3.Error as e:
+            logger.error(f"Error saving config to database: {e}")
+        finally:
+            conn.close()
 
     @classmethod
     def initialize(cls):
@@ -29,13 +52,12 @@ class Config:
 
     @classmethod
     def reload_if_changed(cls):
-        """Reload the configuration if the config file has changed."""
-        current_timestamp = os.path.getmtime('config.json')
-        if current_timestamp != cls.last_loaded_timestamp:
-            cls.last_loaded_timestamp = current_timestamp
-            cls.dynamic_config = cls.load_dynamic_config()
-            cls.update_dynamic_config()
-            logger.info("Configuration reloaded.")
+        """Reload the configuration if the config data in the database has changed."""
+        # You may implement a logic to check if the database entry has changed, if required.
+        # For now, we'll just reload dynamically without a timestamp comparison
+        cls.dynamic_config = cls.load_dynamic_config()
+        cls.update_dynamic_config()
+        logger.info("Configuration reloaded from database.")
 
     @classmethod
     def update_dynamic_config(cls):
@@ -83,4 +105,3 @@ class Config:
             cls.ENCRYPTION_KEY = None
 
 Config.initialize()
-
