@@ -3,403 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Knotie-AI</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Knotie AI Admin</title>
     <style>
-        .container { max-width: 1200px; margin-top: 50px; }
-        .nav-tabs { border-right: 1px solid #ddd; padding-right: 10px; }
-        .nav-tabs .nav-item { margin-bottom: 10px; }
-        .nav-tabs .nav-link { 
-            text-align: left; 
-            background-color: #f8f9fa; 
-            border-radius: 0; 
-            border: 1px solid transparent;
-            padding: 10px 15px;
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
         }
-        .nav-tabs .nav-link.active {
-            background-color: #007bff; 
-            color: white; 
-            border-color: #007bff;
+        .container {
+            width: 80%;
+            margin: auto;
+            overflow: hidden;
+            padding: 20px;
+        }
+        nav {
+            background: #333;
+            color: #fff;
+            padding: 10px;
+        }
+        nav ul {
+            padding: 0;
+            list-style: none;
+        }
+        nav ul li {
+            display: inline;
+            margin-right: 20px;
+        }
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
         }
         .tab-content {
-            background-color: #ffffff;
+            background: #fff;
             padding: 20px;
-            border: 1px solid #ddd;
+            margin-top: 20px;
             border-radius: 5px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        .tab-pane { 
-            padding-left: 10px; 
+        .form-group {
+            margin-bottom: 15px;
         }
-        h1 {
-            margin-bottom: 20px;
+        label {
+            display: block;
+            margin-bottom: 5px;
         }
-        .logout-btn {
-            margin-top: auto;
-            margin-left: 10px;
-            display: flex;
-            justify-content: flex-end;
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        button {
+            background: #333;
+            color: #fff;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #555;
         }
     </style>
 </head>
 <body>
+    <nav>
+        <ul>
+            <li><a href="#" onclick="showTab('config')">Configuration</a></li>
+            <li><a href="#" onclick="showTab('tools')">Tools</a></li>
+            <li><a href="#" onclick="showTab('prompts')">Prompts</a></li>
+            <li><a href="#" onclick="showTab('chats')">Chats</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </nav>
+
     <div class="container">
-        <h1>Welcome to Knotie-AI Admin</h1>
-        <p class="lead">Manage your settings and view interactions</p>
+        <div id="config" class="tab-content">
+            <h2>Configuration</h2>
+            <form id="config-form"></form>
+            <button onclick="updateConfig()">Update Config</button>
+            <div id="config-message"></div>
+        </div>
 
-        <div class="row">
-            <div class="col-md-3">
-                <ul class="nav nav-tabs flex-column" id="adminTab" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link active" id="form-tab" data-toggle="tab" href="#form-section" role="tab" aria-controls="form" aria-selected="true">Admin Form</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="config-tab" data-toggle="tab" href="#config-section" role="tab" aria-controls="config" aria-selected="false">Settings</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="chats-tab" data-toggle="tab" href="#chats-section" role="tab" aria-controls="chats" aria-selected="false">Chats</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="tools-tab" data-toggle="tab" href="#tools-section" role="tab" aria-controls="tools" aria-selected="false">Custom Tools</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="prompts-tab" data-toggle="tab" href="#prompts-section" role="tab" aria-controls="prompts" aria-selected="false">Prompts</a>
-                    </li>
-                    
-                    <li class="logout-btn">
-                        <button class="btn btn-danger" onclick="logout()">Logout</button>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="col-md-9">
-                <div class="tab-content" id="adminTabContent">
-                    <div class="tab-pane fade show active" id="form-section" role="tabpanel" aria-labelledby="form-tab">
-                        <h3>Knotie AI Admin Form</h3>
-                        <iframe
-                            src="https://api.leadconnectorhq.com/widget/form/j9kpCI8SwmuwarKDR97d"
-                            style="width:100%;height:646px;border:none;border-radius:3px"
-                            id="inline-j9kpCI8SwmuwarKDR97d" 
-                            data-layout="{'id':'INLINE'}"
-                            data-trigger-type="alwaysShow"
-                            data-trigger-value=""
-                            data-activation-type="alwaysActivated"
-                            data-activation-value=""
-                            data-deactivation-type="neverDeactivate"
-                            data-deactivation-value=""
-                            data-form-name="Knotie AI Admin Form"
-                            data-height="646"
-                            data-layout-iframe-id="inline-j9kpCI8SwmuwarKDR97d"
-                            data-form-id="j9kpCI8SwmuwarKDR97d"
-                            title="Knotie AI Admin Form">
-                        </iframe>
-                        <script src="https://link.msgsndr.com/js/form_embed.js"></script>
-                    </div>
-
-                    <div class="tab-pane fade" id="config-section" role="tabpanel" aria-labelledby="config-tab">
-                        <h3>Configuration</h3>
-                        <div id="config-form"></div>
-                        <button class="btn btn-primary mt-3" onclick="updateConfig()">Update Config</button>
-                        <div id="config-message" class="mt-3"></div>
-                    </div>
-
-                    <div class="tab-pane fade" id="chats-section" role="tabpanel" aria-labelledby="chats-tab">
-                        <h3>Chats</h3>
-                        <div id="chats-list"></div>
-                        <div id="chat-details" class="mt-4"></div>
-                    </div>
-
-                    <div class="tab-pane fade" id="tools-section" role="tabpanel" aria-labelledby="tools-tab">
-                        <h3>Custom Tools</h3>
-                        <div id="tools-list">
-                            <!-- Existing tools will be displayed here -->
-                        </div>
-                        <button class="btn btn-success mb-3" onclick="addTool()">Add Tool</button>
-                        <form id="tools-form" enctype="multipart/form-data">
-                            <!-- Dynamic tool fields will be appended here -->
-                        </form>
-                        <button class="btn btn-primary mt-3" onclick="submitTools()">Submit Tools</button>
-                        <div id="tools-message" class="mt-3"></div>
-                    </div>
-                    <div class="tab-pane fade" id="prompts-section" role="tabpanel" aria-labelledby="prompts-tab">
-                        <h3>Manage Prompts</h3>
-                        <div id="prompts-list">
-                            <!-- Existing prompts will be displayed here -->
-                        </div>
-                        <button class="btn btn-primary mt-3" onclick="updatePrompts()">Save Changes</button>
-                        <div id="prompts-message" class="mt-3"></div>
-                    </div>
-                    
+        <div id="tools" class="tab-content" style="display:none;">
+            <h2>Tools</h2>
+            <div id="tools-list"></div>
+            <h3>Add New Tool</h3>
+            <form id="add-tool-form">
+                <div class="form-group">
+                    <label for="toolName">Tool Name:</label>
+                    <input type="text" id="toolName" name="toolName" required>
                 </div>
-            </div>
+                <div class="form-group">
+                    <label for="toolDescription">Tool Description:</label>
+                    <input type="text" id="toolDescription" name="toolDescription" required>
+                </div>
+                <div class="form-group">
+                    <label for="toolFile">Tool File:</label>
+                    <input type="file" id="toolFile" name="toolFile" required>
+                </div>
+                <div class="form-group">
+                    <label for="toolSensitiveHeaders">Sensitive Headers:</label>
+                    <input type="text" id="toolSensitiveHeaders" name="toolSensitiveHeaders">
+                </div>
+                <div class="form-group">
+                    <label for="toolSensitiveBody">Sensitive Body:</label>
+                    <input type="text" id="toolSensitiveBody" name="toolSensitiveBody">
+                </div>
+                <button type="submit">Add Tool</button>
+            </form>
+            <div id="tools-message"></div>
+        </div>
+
+        <div id="prompts" class="tab-content" style="display:none;">
+            <h2>Prompts</h2>
+            <div id="prompts-list"></div>
+            <div id="prompts-message"></div>
+        </div>
+
+        <div id="chats" class="tab-content" style="display:none;">
+            <h2>Chats</h2>
+            <div id="chats-list"></div>
+            <div id="chat-details"></div>
         </div>
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-    // Load prompts when Prompts tab is shown
-    $('#adminTab a[href="#prompts-section"]').on('shown.bs.tab', function () {
-        loadPrompts();
-    });
-});
-
-async function loadPrompts() {
-    const response = await fetch('/api/prompts');
-    const prompts = await response.json();
-    const promptsList = document.getElementById('prompts-list');
-    promptsList.innerHTML = '';
-
-    prompts.forEach(prompt => {
-        const promptItem = document.createElement('div');
-        promptItem.className = 'prompt-item mb-4';
-        promptItem.innerHTML = `
-            <h5>${prompt.name}</h5>
-            <textarea class="form-control" id="prompt-${prompt.name}" rows="6">${prompt.template}</textarea>
-            <hr>
-        `;
-        promptsList.appendChild(promptItem);
-    });
-}
-
-async function updatePrompts() {
-    const promptsList = document.getElementById('prompts-list');
-    const prompts = promptsList.querySelectorAll('.prompt-item');
-    let updatedPrompts = [];
-
-    prompts.forEach(prompt => {
-        const name = prompt.querySelector('h5').textContent;
-        const template = prompt.querySelector('textarea').value;
-        updatedPrompts.push({ name, template });
-    });
-
-    for (const prompt of updatedPrompts) {
-        const response = await fetch('/api/prompts', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(prompt)
-        });
-        const result = await response.json();
-        document.getElementById('prompts-message').textContent = result.message;
-    }
-}
-
-        document.addEventListener("DOMContentLoaded", function () {
-            const formFilled = getCookie('formFilled');
-            if (formFilled) {
-                showSection('form');
-            } else {
-                showSection('form');
-            }
-
-            // Load config when Settings tab is shown
-            $('#adminTab a[href="#config-section"]').on('shown.bs.tab', function () {
-                loadConfig();
-            });
-
-            // Load chats when Chats tab is shown
-            $('#adminTab a[href="#chats-section"]').on('shown.bs.tab', function () {
-                loadChats();
-            });
-
-            // Load tools when Custom Tools tab is shown
-            $('#adminTab a[href="#tools-section"]').on('shown.bs.tab', function () {
-                loadTools();
-            });
-        });
-
-        function showSection(section) {
-            const tab = document.querySelector(`#${section}-tab`);
-            const tabContent = new bootstrap.Tab(tab);
-            tabContent.show();
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+            document.getElementById(tabName).style.display = 'block';
+            if (tabName === 'config') fetchConfig();
+            if (tabName === 'tools') fetchTools();
+            if (tabName === 'prompts') fetchPrompts();
+            if (tabName === 'chats') fetchChats();
         }
 
-        async function loadConfig() {
-            const response = await fetch('/api/config');
-            const config = await response.json();
-            const configForm = document.getElementById('config-form');
-            configForm.innerHTML = '';
-            for (const [key, value] of Object.entries(config)) {
-                const inputType = key.includes('KEY') || key.includes('TOKEN') ? 'password' : 'text';
-                const textarea = key.includes('BUSINESS') || key.includes('PRODUCTS_SERVICES') || key.includes('AGENT_CUSTOM_INSTRUCTIONS');
-                configForm.innerHTML += `
-                    <div class="form-group">
-                        <label for="${key}">${key}</label>
-                        ${textarea ? `<textarea class="form-control" id="${key}">${value}</textarea>` : `<input type="${inputType}" class="form-control" id="${key}" value="${value}">`}
-                    </div>
-                `;
-            }
+        function fetchConfig() {
+            fetch('/api/config')
+                .then(response => response.json())
+                .then(data => {
+                    const form = document.getElementById('config-form');
+                    form.innerHTML = '';
+                    for (const [key, value] of Object.entries(data)) {
+                        const div = document.createElement('div');
+                        div.className = 'form-group';
+                        div.innerHTML = `
+                            <label for="config-${key}">${key}:</label>
+                            <input type="text" id="config-${key}" name="${key}" value="${value}">
+                        `;
+                        form.appendChild(div);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
         }
 
-        async function updateConfig() {
-            const configForm = document.getElementById('config-form');
-            const inputs = configForm.querySelectorAll('input, textarea');
-            const newConfig = {};
-            inputs.forEach(input => {
-                newConfig[input.id] = input.value;
-            });
-            const response = await fetch('/api/config', {
+        function updateConfig() {
+            const form = document.getElementById('config-form');
+            const config = {};
+            for (const input of form.elements) {
+                if (input.name) {
+                    config[input.name] = input.value;
+                }
+            }
+            
+            fetch('/api/config', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(newConfig)
-            });
-            const result = await response.json();
-            document.getElementById('config-message').textContent = result.message;
+                body: JSON.stringify(config),
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('config-message').textContent = data.message;
+            })
+            .catch(error => console.error('Error:', error));
         }
 
-        async function loadChats() {
-            const response = await fetch('/api/chats');
-            const chats = await response.json();
-            const chatsList = document.getElementById('chats-list');
-            chatsList.innerHTML = '';
-            chats.forEach(chat => {
-                const chatItem = document.createElement('div');
-                chatItem.className = 'chat-item';
-                chatItem.textContent = `Transaction ID: ${chat}`;
-                chatItem.onclick = () => loadChatDetails(chat);
-                chatsList.appendChild(chatItem);
-            });
+        function fetchTools() {
+            fetch('/api/tools')
+                .then(response => response.json())
+                .then(data => {
+                    const toolsList = document.getElementById('tools-list');
+                    toolsList.innerHTML = '<h3>Existing Tools</h3>';
+                    data.forEach(tool => {
+                        const div = document.createElement('div');
+                        div.textContent = `${tool.name}: ${tool.description}`;
+                        toolsList.appendChild(div);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
         }
 
-        async function loadChatDetails(transactionId) {
-            const response = await fetch(`/api/chat/${transactionId}`);
-            const chatDetails = await response.json();
-            const chatDetailsDiv = document.getElementById('chat-details');
-            chatDetailsDiv.innerHTML = `
-                <h4>Chat Details for Transaction ID: ${transactionId}</h4>
-                <pre>${JSON.stringify(chatDetails, null, 2)}</pre>
-            `;
+        document.getElementById('add-tool-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch('/api/tools', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('tools-message').textContent = data.message;
+                fetchTools();
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        function fetchPrompts() {
+            fetch('/api/prompts')
+                .then(response => response.json())
+                .then(data => {
+                    const promptsList = document.getElementById('prompts-list');
+                    promptsList.innerHTML = '';
+                    data.forEach(prompt => {
+                        const div = document.createElement('div');
+                        div.innerHTML = `
+                            <h3>${prompt.name}</h3>
+                            <textarea id="prompt-${prompt.name}" rows="4" cols="50">${prompt.template}</textarea>
+                            <button onclick="updatePrompt('${prompt.name}')">Update</button>
+                        `;
+                        promptsList.appendChild(div);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
         }
 
-        async function loadTools() {
-            const response = await fetch('/api/tools');
-            const tools = await response.json();
-            const toolsList = document.getElementById('tools-list');
-            toolsList.innerHTML = '';
-
-            if (tools.length === 0) {
-                toolsList.innerHTML = '<p>No tools added yet.</p>';
-            } else {
-                tools.forEach(tool => {
-                    const toolItem = document.createElement('div');
-                    toolItem.className = 'tool-item mb-4';
-                    toolItem.innerHTML = `
-                        <h5>${tool.name}</h5>
-                        <p>${tool.description}</p>
-                        <p><strong>OpenAPI Spec:</strong> ${tool.openapi_spec}</p>
-                        <hr>
-                    `;
-                    toolsList.appendChild(toolItem);
-                });
-            }
+        function updatePrompt(promptName) {
+            const template = document.getElementById(`prompt-${promptName}`).value;
+            fetch('/api/prompts', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: promptName, template: template }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('prompts-message').textContent = data.message;
+            })
+            .catch(error => console.error('Error:', error));
         }
 
-        let toolCount = 0;
-
-        function addTool() {
-            toolCount++;
-            const toolForm = document.createElement('div');
-            toolForm.className = 'mb-4';
-            toolForm.innerHTML = `
-                <div class="form-group">
-                    <label for="toolName${toolCount}">Tool Name</label>
-                    <input type="text" class="form-control" id="toolName${toolCount}" placeholder="Enter tool name" required>
-                </div>
-                <div class="form-group">
-                    <label for="toolDescription${toolCount}">Tool Description</label>
-                    <textarea class="form-control" id="toolDescription${toolCount}" rows="3" placeholder="Enter tool description" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="toolFile${toolCount}">OpenAPI Specification File</label>
-                    <input type="file" class="form-control-file" id="toolFile${toolCount}" required>
-                </div>
-                <div class="form-group">
-                    <label for="toolSensitiveHeaders${toolCount}">Sensitive Headers (JSON format)</label>
-                    <textarea class="form-control" id="toolSensitiveHeaders${toolCount}" rows="3" placeholder='{"header_name": "sensitive_value"}'></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="toolSensitiveBody${toolCount}">Sensitive Body Parameters (JSON format)</label>
-                    <textarea class="form-control" id="toolSensitiveBody${toolCount}" rows="3" placeholder='{"parameter_name": "sensitive_value"}'></textarea>
-                </div>
-
-                <hr>
-            `;
-            document.getElementById('tools-form').appendChild(toolForm);
+        function fetchChats() {
+            fetch('/api/chats')
+                .then(response => response.json())
+                .then(data => {
+                    const chatsList = document.getElementById('chats-list');
+                    chatsList.innerHTML = '<h3>Chat Sessions</h3>';
+                    data.forEach(chatId => {
+                        const div = document.createElement('div');
+                        div.innerHTML = `
+                            <p>${chatId}</p>
+                            <button onclick="fetchChatDetails('${chatId}')">View Details</button>
+                        `;
+                        chatsList.appendChild(div);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
         }
 
-    async function submitTools() {
-    const formData = new FormData();
-    for (let i = 1; i <= toolCount; i++) {
-        const toolName = document.getElementById(`toolName${i}`).value;
-        const toolDescription = document.getElementById(`toolDescription${i}`).value;
-        const toolFile = document.getElementById(`toolFile${i}`).files[0];
-        const toolSensitiveHeaders = document.getElementById(`toolSensitiveHeaders${i}`).value;
-        const toolSensitiveBody = document.getElementById(`toolSensitiveBody${i}`).value;
-
-        if (toolName && toolDescription && toolFile) {
-            formData.append(`toolName${i}`, toolName);
-            formData.append(`toolDescription${i}`, toolDescription);
-            formData.append(`toolFile${i}`, toolFile);
-            formData.append(`toolSensitiveHeaders${i}`, toolSensitiveHeaders);
-            formData.append(`toolSensitiveBody${i}`, toolSensitiveBody);
-        }
-    }
-
-    const response = await fetch('/api/tools', {
-        method: 'POST',
-        body: formData
-    });
-
-    const result = await response.json();
-    document.getElementById('tools-message').textContent = result.message;
-
-    // Reload the tools list after adding new tools
-    loadTools();
-}
-
-        function logout() {
-            fetch('/logout')
-                .then(() => window.location.href = '/');
+        function fetchChatDetails(chatId) {
+            fetch(`/api/chat/${chatId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const chatDetails = document.getElementById('chat-details');
+                    chatDetails.innerHTML = `<h3>Chat Details for ${chatId}</h3>`;
+                    data.forEach(message => {
+                        const div = document.createElement('div');
+                        div.textContent = `${message.role}: ${message.content}`;
+                        chatDetails.appendChild(div);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
         }
 
-        function setCookie(name, value, days) {
-            const d = new Date();
-            d.setTime(d.getTime() + (days*24*60*60*1000));
-            const expires = "expires="+ d.toUTCString();
-            document.cookie = name + "=" + value + ";" + expires + ";path=/";
-        }
-
-        function getCookie(name) {
-            const cname = name + "=";
-            const decodedCookie = decodeURIComponent(document.cookie);
-            const ca = decodedCookie.split(';');
-            for(let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') {
-                    c = c.substring(1);
-                }
-                if (c.indexOf(cname) === 0) {
-                    return c.substring(cname.length, c.length);
-                }
-            }
-            return "";
-        }
-
-        function formSubmitted() {
-            setCookie('formFilled', 'true', 365);
-            showSection('config');
-        }
-
-        document.getElementById('inline-j9kpCI8SwmuwarKDR97d').onload = function() {
-            const formIframe = document.getElementById('inline-j9kpCI8SwmuwarKDR97d');
-            formIframe.contentWindow.addEventListener('submit', formSubmitted);
-        }
+        // Initial load
+        showTab('config');
     </script>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

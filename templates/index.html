@@ -3,144 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Knotie - Empowering Your Conversations</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Knotie AI</title>
     <style>
         body {
-            background-color: #f8f9fa;
-        }
-        .navbar {
-            background-color: #343a40;
-        }
-        .navbar-brand, .nav-link {
-            color: #ffffff !important;
-        }
-        .container {
-            max-width: 800px;
-            text-align: center;
-        }
-        .centered {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
+            background-color: #f4f4f4;
         }
-        .btn-primary, .btn-secondary {
-            margin: 10px;
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
         }
-        .lead {
-            font-size: 1.25rem;
-            font-weight: 300;
+        h1 {
+            text-align: center;
+            color: #333;
         }
-        .button-group {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
+        .form-group {
+            margin-bottom: 1rem;
         }
-        .login-section, .config-section, .password-section {
-            display: none;
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #login-message {
+            margin-top: 1rem;
+            text-align: center;
+            color: #dc3545;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg">
-        <a class="navbar-brand" href="#">Knotie AI</a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Features</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Discord</a>
-                </li>
-            </ul>
-            <button class="btn btn-outline-light" onclick="showLogin()">Login</button>
-        </div>
-    </nav>
-    <div class="container centered">
-        <div class="landing-page">
-            <h1>Knotie AI</h1>
-            <p class="lead">The Open-Source AI Agent That Runs Your Sales Team</p>
-            <div class="button-group">
-                <a class="btn btn-primary" href="https://knotie-ai.pages.dev/">Self-Host</a>
-                <button class="btn btn-primary" onclick="showLogin()">Try Now</button>
-            </div>
-            <div>
-                <a class="btn btn-secondary" href="https://kno2gether.com/knotie-ai-sales-agent/">Contribute To The Project</a>
-            </div>
-        </div>
-        <div class="login-section">
-            <h3>Login</h3>
+    <div class="container">
+        <h1>Knotie AI</h1>
+        <form id="login-form">
             <div class="form-group">
                 <label for="username">Username</label>
-                <input type="text" class="form-control" id="username">
+                <input type="text" id="username" name="username" required>
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" class="form-control" id="password">
+                <input type="password" id="password" name="password" required>
             </div>
-            <button class="btn btn-primary" onclick="login()">Login</button>
-            <div id="login-message" class="mt-3"></div>
-        </div>
-        <div class="password-section">
-            <h3>Change Password</h3>
-            <div class="form-group">
-                <label for="new-password">New Password</label>
-                <input type="password" class="form-control" id="new-password">
-            </div>
-            <button class="btn btn-primary" onclick="changePassword()">Change Password</button>
-            <div id="password-message" class="mt-3"></div>
-        </div>
+            <button type="submit">Login</button>
+        </form>
+        <div id="login-message"></div>
     </div>
 
     <script>
-        function showLogin() {
-            document.querySelector('.landing-page').style.display = 'none';
-            document.querySelector('.login-section').style.display = 'block';
-        }
-
-        async function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const response = await fetch('/login', {
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch('/login', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ username, password })
-            });
-            const result = await response.json();
-            document.getElementById('login-message').textContent = result.message;
-            if (result.success) {
-                if (result.first_login) {
-                    document.querySelector('.login-section').style.display = 'none';
-                    document.querySelector('.password-section').style.display = 'block';
-                } else {
+                body: JSON.stringify({
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
                     window.location.href = '/admin';
+                } else {
+                    document.getElementById('login-message').textContent = 'Login failed: ' + data.message;
                 }
-            }
-        }
-
-        async function changePassword() {
-            const newPassword = document.getElementById('new-password').value;
-            const response = await fetch('/change_password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ new_password: newPassword })
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('login-message').textContent = 'An error occurred. Please try again.';
             });
-            const result = await response.json();
-            document.getElementById('password-message').textContent = result.message;
-            if (result.success) {
-                window.location.href = '/admin';
-            }
-        }
+        });
     </script>
 </body>
 </html>
