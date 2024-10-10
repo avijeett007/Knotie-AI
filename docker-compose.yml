@@ -12,16 +12,17 @@ services:
       - .:/usr/src/app
       - ./audio_files:/usr/src/app/audio_files
     environment:
-      FLASK_APP: app.py
-      FLASK_ENV: development
-      FLASK_RUN_HOST: 0.0.0.0
+      - PYTHONUNBUFFERED=1
     env_file:
       - .env
+    command: uvicorn app:app --host 0.0.0.0 --port 5000 --reload
     depends_on:
       - redis
   redis:
     image: "redis:alpine"
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
 volumes:
   redis_data:

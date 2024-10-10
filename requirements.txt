@@ -1,5 +1,11 @@
-Flask
-Flask-Session
+fastapi
+uvicorn
+starlette
+jinja2
+aiofiles
+python-multipart
+itsdangerous
+pydantic
 twilio
 redis
 python-dotenv
@@ -8,10 +14,8 @@ langchain
 openai
 requests
 werkzeug
-anthropic>=0.25.7
+anthropic
 elevenlabs
-pydantic
-flask-cors
 openapi-spec-validator
 openapi-python-client
 PyYAML
