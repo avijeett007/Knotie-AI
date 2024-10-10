@@ -10,7 +10,6 @@ from anthropic import Anthropic
 import json
 from langchain_core.prompts import PromptTemplate
 from prompts import get_prompt_template
-from flask import session  # Uncomment it after testing.
 from stages import OUTBOUND_CONVERSATION_STAGES, INBOUND_CONVERSATION_STAGES
 import logging
 import sqlite3
